@@ -3,6 +3,7 @@
 import { AppShell } from '@/components/app-shell';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SessionProvider } from '@/lib/session';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 function ShellSkeleton() {
   return (
@@ -21,7 +22,9 @@ function ShellSkeleton() {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider fallback={<ShellSkeleton />}>
-      <AppShell>{children}</AppShell>
+      <TooltipProvider delayDuration={200}>
+        <AppShell>{children}</AppShell>
+      </TooltipProvider>
     </SessionProvider>
   );
 }

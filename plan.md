@@ -60,7 +60,7 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 - First-run setup, login + email code, rotating refresh cookies, reset, rate limits, Mail module (SMTP, dev capture). [login/refresh]
 - Global deny-by-default guard, `userId` scoping, Zod pipe, Settings page. [isolation harness, grows each phase]
 
-**2. Tracker (no AI)** — [ ]
+**2. Tracker (no AI)** — [x] done
 - Applications: manual add, company auto-create with normalisation, duplicate warning, archive. [normalisation]
 - Board (drag and drop, days in stage) and table (sort, filter, search), stage history.
 - Application page: details, notes, timeline, channel.

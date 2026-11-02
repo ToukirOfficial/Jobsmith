@@ -142,7 +142,8 @@ export const companyUpdateSchema = z.object({
   name: required(200, 'Company name').optional(),
   website: nullableUrl,
   notes: nullableText(20_000),
-  sponsorId: z.uuid().nullish(),
+  /** Confirms a "possible match" from the sponsor register (or clears it with null). */
+  sponsorName: text(300).nullish(),
 });
 
 // ---------- Contacts ----------

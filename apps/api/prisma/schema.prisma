@@ -390,10 +390,10 @@ model Application {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
   user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company          Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company          Company    @relation(fields: [companyId], references: [id], onDelete: NoAction)
   cvVersion        CvVersion? @relation(fields: [cvVersionId], references: [id], onDelete: SetNull)
-  cvSnapshot       Snapshot?  @relation("CvSnapshot", fields: [cvSnapshotId], references: [id], onDelete: Restrict)
-  letterSnapshot   Snapshot?  @relation("LetterSnapshot", fields: [letterSnapshotId], references: [id], onDelete: Restrict)
+  cvSnapshot       Snapshot?  @relation("CvSnapshot", fields: [cvSnapshotId], references: [id], onDelete: NoAction)
+  letterSnapshot   Snapshot?  @relation("LetterSnapshot", fields: [letterSnapshotId], references: [id], onDelete: NoAction)
 
   stageEvents  StageEvent[]
   snapshots    Snapshot[]          @relation("ApplicationSnapshots")
@@ -440,7 +440,7 @@ model Snapshot {
   updatedAt     DateTime     @updatedAt
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   application   Application  @relation("ApplicationSnapshots", fields: [applicationId], references: [id], onDelete: Cascade)
-  file          StoredFile?  @relation(fields: [fileId], references: [id], onDelete: Restrict)
+  file          StoredFile?  @relation(fields: [fileId], references: [id], onDelete: NoAction)
   cvFor         Application? @relation("CvSnapshot")
   letterFor     Application? @relation("LetterSnapshot")
 

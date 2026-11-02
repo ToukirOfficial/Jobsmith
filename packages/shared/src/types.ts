@@ -132,7 +132,7 @@ export interface CompanyDetail extends CompanySummary {
   notes: string | null;
   applications: ApplicationSummary[];
   contacts: ContactSummary[];
-  possibleSponsors: { id: string; name: string; town: string | null; routes: string[] }[];
+  possibleSponsors: { name: string; town: string | null; routes: string[] }[];
 }
 
 export interface ContactSummary {

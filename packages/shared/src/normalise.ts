@@ -37,9 +37,9 @@ export function normaliseCompany(name: string): string {
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
   const words = cleaned.split(' ').filter(Boolean);
-  // Drop legal suffixes from the end (and a leading "the"), but never empty the name.
-  while (words.length > 1 && SUFFIXES.has(words[words.length - 1]!)) words.pop();
+  // Drop a leading "the", then legal suffixes from the end, but never empty the name.
   if (words.length > 1 && words[0] === 'the') words.shift();
+  while (words.length > 1 && SUFFIXES.has(words[words.length - 1]!)) words.pop();
   return words.join(' ');
 }
 
