@@ -1,3 +1,4 @@
+// Jobsmith API entry point: the HTTP server (the worker is worker.ts).
 import { config } from './config.js';
 import { createApp } from './app.js';
 

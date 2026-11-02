@@ -3,6 +3,7 @@ import { REMINDER_KIND_LABELS, formatDateTime, type ReminderDto } from '@jobsmit
 import { config } from '../config.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma.service.js';
+import { RedisService } from '../redis.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { email } from '../mail/templates.js';
 
@@ -24,6 +25,7 @@ export class RemindersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly redis: RedisService,
   ) {}
 
   async list(userId: string, scope: 'due' | 'upcoming' | 'all'): Promise<ReminderDto[]> {
@@ -38,7 +40,9 @@ export class RemindersService {
   async setDismissed(userId: string, id: string, dismissed: boolean) {
     const r = await this.prisma.reminder.findFirst({ where: { id, userId } });
     if (!r) throw new NotFoundException({ message: 'That reminder could not be found.' });
-    return toDto(await this.prisma.reminder.update({ where: { id }, data: { dismissedAt: dismissed ? new Date() : null }, include: INCLUDE }));
+    const updated = await this.prisma.reminder.update({ where: { id }, data: { dismissedAt: dismissed ? new Date() : null }, include: INCLUDE });
+    await this.redis.invalidate(userId);
+    return toDto(updated);
   }
 
   /**

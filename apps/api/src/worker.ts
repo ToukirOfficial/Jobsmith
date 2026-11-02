@@ -16,6 +16,8 @@ const SCHEDULES: { id: string; pattern: string; demoOnly?: boolean }[] = [
   { id: 'sponsor-register', pattern: '0 3 * * *' },
   // Reminders: each due one is claimed once and emailed if wanted.
   { id: 'reminders', pattern: '*/5 * * * *' },
+  // Expired downloads (exports, one-off PDFs).
+  { id: 'cleanup', pattern: '17 * * * *' },
 ];
 
 @Module({ imports: [CommonModule, JobsModule] })

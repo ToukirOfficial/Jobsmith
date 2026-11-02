@@ -244,3 +244,28 @@ export interface CalendarEvent {
   allDay: boolean;
   applicationId: string;
 }
+
+export interface RateRow {
+  key: string;
+  label: string;
+  applied: number;
+  replied: number;
+  rate: number;
+}
+
+export interface DashboardDto {
+  today: {
+    remindersDue: ReminderDto[];
+    interviewsThisWeek: InterviewDto[];
+    waiting: { id: string; title: string; company: string; appliedAt: string; days: number }[];
+    waitingCount: number;
+  };
+  funnel: { stage: 'SAVED' | 'APPLIED' | 'REPLIED' | 'INTERVIEW' | 'OFFER'; label: string; count: number; rate: number | null }[];
+  byChannel: RateRow[];
+  byCvVersion: RateRow[];
+  bySponsor: RateRow[];
+  weekly: { weekStart: string; applied: number }[];
+  avgDaysToReply: number | null;
+  goal: { target: number; thisWeek: number; weekStart: string };
+  totals: { active: number; applied: number; offers: number };
+}

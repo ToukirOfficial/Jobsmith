@@ -49,7 +49,9 @@ Things the PRD and FEATURES list don't say, and what I decided. Change any of th
 ## Data
 - Delete account needs the password and removes all rows and files immediately (no grace period).
 - CSV import accepts up to 2,000 rows; unknown stages map to Saved.
-- Export files are kept for 24 hours, then deleted.
+- Export files are kept for 24 hours, then deleted by an hourly clean-up job. Exported CSV cells that start with = + - or @ get a leading apostrophe so spreadsheets don't run them as formulas.
+- CSV import reads dates as ISO (2026-11-02) or UK order (02/11/2026). Salaries like "£48k" are read as yearly. A row without a job title or company is skipped and reported.
+- Dashboard numbers are cached in Redis for 60 seconds and cleared after any change that affects them.
 
 ## Local seed login
 

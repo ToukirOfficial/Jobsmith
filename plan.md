@@ -84,7 +84,7 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 - Reminders (follow-up N days, interview tomorrow, closing soon, take-home due), in-app + email, each sent once. [reminder scheduling]
 - Calendar view + private iCal feed.
 
-**6. Dashboard + data** — [ ]
+**6. Dashboard + data** — [x] done
 - Dashboard: today, funnel, response rate by channel / CV version / sponsor status, weekly chart, days to first reply, goal (Redis cached).
 - Export all (JSON + CSV + PDFs zip) via queue; delete account and all data.
 - CSV import with column mapping.

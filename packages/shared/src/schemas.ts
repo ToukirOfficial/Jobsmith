@@ -218,3 +218,13 @@ export const insightsQuery = z.object({ cvVersionId: z.uuid().optional() });
 export const reminderListQuery = z.object({ scope: z.enum(['due', 'upcoming', 'all']).default('all') });
 export const reminderUpdateSchema = z.object({ dismissed: z.boolean() });
 export const calendarQuery = z.object({ from: isoDate, to: isoDate });
+
+// ---------- Import ----------
+
+export const IMPORT_FIELDS = ['title', 'company', 'location', 'url', 'stage', 'appliedOn', 'closingDate', 'salaryMin', 'salaryMax', 'channel', 'notes'] as const;
+export type ImportField = (typeof IMPORT_FIELDS)[number];
+export const importPreviewSchema = z.object({ csv: z.string().min(1, 'Choose a CSV file.').max(3_000_000, 'That file is too large (3 MB at most).') });
+export const importSchema = importPreviewSchema.extend({
+  /** CSV column index for each Jobsmith field, or null to skip it. */
+  mapping: z.record(z.enum(IMPORT_FIELDS), z.number().int().min(0).max(200).nullable()).refine((m) => m.title != null && m.company != null, 'Choose the columns for the job title and the company.'),
+});

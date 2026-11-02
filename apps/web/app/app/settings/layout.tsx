@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 export const SETTINGS_SECTIONS = [
   { href: '/app/settings', label: 'Job search' },
   { href: '/app/settings/tools', label: 'Bookmarklet' },
+  { href: '/app/settings/data', label: 'Your data' },
   { href: '/app/settings/account', label: 'Account' },
 ];
 

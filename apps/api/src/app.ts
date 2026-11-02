@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { BadRequestException, StandardSchemaValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { NextFunction, Request, Response } from 'express';
+import { json, type NextFunction, type Request, type Response } from 'express';
 import { AppModule } from './app.module.js';
 import { parseCookies } from './common/cookies.js';
 import { csrf } from './common/csrf.js';
@@ -39,6 +39,8 @@ export async function createApp(options: { logger?: boolean } = {}) {
   app.disable('x-powered-by');
   // Requests arrive through Next.js (and nginx in production) on the same machine.
   app.set('trust proxy', 'loopback');
+  // CSV imports arrive as text in JSON (up to 3 MB); every other route keeps a small limit.
+  app.use('/api/v1/imports', json({ limit: '4mb' }));
   app.useBodyParser('json', { limit: '200kb' });
   app.use(securityHeaders, parseCookies, csrf);
   app.setGlobalPrefix('api/v1');
