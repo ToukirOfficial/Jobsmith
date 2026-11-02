@@ -71,3 +71,4 @@ Things the PRD and FEATURES list don't say, and what I decided. Change any of th
 ## Other
 - UK English throughout; dates shown as `2 Nov 2026`.
 - The sponsor register importer is ported from github.com/ToukirOfficial/uk-sponsors (MIT, not published on npm), with credit in the code and README.
+- PostgreSQL 18 is the target, but a server may run 16 or 17: the first migration adds a SQL `uuidv7()` (time-ordered, version 7) when the database has none, so ids are the same shape everywhere.
