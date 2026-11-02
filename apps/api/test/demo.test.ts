@@ -78,6 +78,14 @@ describe('demo mode', () => {
     expect((await v.post(`/agent-runs/${run.id}/steps/4/rerun`)).status).toBe(409);
   });
 
+  it('lets the seeded demo account (no expiry) log in without a code', async () => {
+    const { createUser, PASSWORD } = await import('./helpers.js');
+    const seeded = await createUser(ctx.prisma, { isDemo: true });
+    const res = await anon(ctx).post('/auth/login', { email: seeded.email, password: PASSWORD });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('ok');
+  });
+
   it('deletes a visitor and the key they tried after 24 hours', async () => {
     const v = await visitor();
     const key = 'AIzaSy-demo-visitor-key-9876';

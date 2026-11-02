@@ -1,5 +1,8 @@
 # Jobsmith
 
+[![CI](https://github.com/ToukirOfficial/Jobsmith/actions/workflows/ci.yml/badge.svg)](https://github.com/ToukirOfficial/Jobsmith/actions/workflows/ci.yml)
+[![Licence: AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-3346d3.svg)](LICENSE)
+
 A free, open-source, self-hosted job search workspace with an AI application agent. Track every application, keep every CV version, and let the agent read the job, check UK visa sponsorship, match your CV and draft the cover letter, while you stay in control of what gets sent.
 
 Bring your own AI key (it works free with Google Gemini), or use it without one. Your data stays on your own server.
@@ -7,6 +10,19 @@ Bring your own AI key (it works free with Google Gemini), or use it without one.
 ![The Jobsmith landing page, with an agent run playing in the hero](docs/screenshots/landing.png)
 
 **[Try the demo](https://jobsmith.toukirahmedrony.com/demo)** · [Run your own copy](#run-your-own-copy) · Licence: AGPL-3.0
+
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [What it does](#what-it-does)
+- [How the agent works](#how-the-agent-works)
+- [Bring your own key (free with Gemini)](#bring-your-own-key-free-with-gemini)
+- [Try the demo](#try-the-demo)
+- [Run your own copy](#run-your-own-copy): [email](#email), [backups](#backups), [upgrades](#upgrades), [deploying without Docker](#deploying-without-docker)
+- [Architecture](#architecture)
+- [Development](#development)
+- [Tests](#tests)
+- [Licence](#licence)
 
 ## Why this exists
 
@@ -128,6 +144,10 @@ docker compose up -d --build
 
 The API applies database migrations when it starts. Take a backup first.
 
+### Deploying without Docker
+
+`deploy.sh` builds a release on your machine and runs it on your own server under PM2 (web, API and worker), with a database dump before any migration and an automatic switch back if the health check fails. Nothing about your server is committed: copy `deploy.env.example` to `deploy.env` (gitignored) and fill in your SSH alias, user, paths, ports and database name. `./deploy.sh --check` shows what would change without touching anything.
+
 ## Architecture
 
 ```
@@ -156,9 +176,13 @@ Requirements: Node.js 24, pnpm 10, PostgreSQL 18 and Redis.
 pnpm install
 cp .env.example .env          # fill in DATABASE_URL, TEST_DATABASE_URL, secrets; COOKIE_SECURE=false
 pnpm db:migrate               # apply migrations
-pnpm build && pnpm db:seed    # optional: a fictional user, demo@jobsmith.example / jobsmith-demo-2026
+pnpm build && pnpm db:seed    # optional: a fictional demo account (see below)
 pnpm dev                      # web on :8035, API on :8135, plus the worker
 ```
+
+The seed creates **demo@jobsmith.example / jobsmith-demo-2026** with a fictional job search. Because its password is public, it is a demo account: the seed only runs with `DEMO_MODE=true` (or `--dev` on a non-production machine, which `pnpm db:seed` passes), and demo accounts can only log in while `DEMO_MODE=true`. To look around locally, set `DEMO_MODE=true` in `.env`; set it back to `false` to use your own account.
+
+A pre-commit hook (installed by `pnpm install`) runs `scripts/scan-secrets.sh`, which stops secrets and public IP addresses from being committed. CI runs it on every file.
 
 ## Tests
 
@@ -176,4 +200,4 @@ EVAL_PROVIDER=GEMINI EVAL_API_KEY=your-key pnpm evals
 
 ## Licence
 
-[AGPL-3.0](LICENSE). If you run a modified Jobsmith for other people, you must share your changes. The sponsor register approach is adapted from [uk-sponsors](https://github.com/ToukirOfficial/uk-sponsors) (MIT).
+[AGPL-3.0](LICENSE). Built by [Toukir Ahmed Rony](https://toukirahmedrony.com). If you run a modified Jobsmith for other people, you must share your changes. The sponsor register approach is adapted from [uk-sponsors](https://github.com/ToukirOfficial/uk-sponsors) (MIT).

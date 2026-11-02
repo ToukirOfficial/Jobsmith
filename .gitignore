@@ -14,3 +14,4 @@ storage-test/
 apps/api/src/generated/
 *.tsbuildinfo
 next-env.d.ts
+deploy.env

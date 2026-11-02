@@ -1,6 +1,7 @@
 # Jobsmith API and worker (one image, two commands). Build from the repository root:
 #   docker build -f apps/api/Dockerfile -t jobsmith-api .
 FROM node:24-bookworm-slim AS build
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 WORKDIR /app
 COPY . .

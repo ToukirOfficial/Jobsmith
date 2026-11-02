@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
+import { config } from '../config.js';
 import { PrismaService } from '../prisma.service.js';
 import type { UserContext } from './auth-context.js';
 import { COOKIES, getCookie } from './cookies.js';
@@ -38,7 +39,8 @@ export class AuthGuard implements CanActivate {
       select: { id: true, name: true, email: true, timeZone: true, isDemo: true, demoExpiresAt: true },
     });
     if (!user) throw notLoggedIn();
-    if (user.isDemo && user.demoExpiresAt && user.demoExpiresAt < new Date()) throw notLoggedIn();
+    // Demo sessions only work in demo mode, and end when the demo expires.
+    if (user.isDemo && (!config().DEMO_MODE || (user.demoExpiresAt && user.demoExpiresAt < new Date()))) throw notLoggedIn();
     req.auth = { userId: user.id, name: user.name, email: user.email, timeZone: user.timeZone, isDemo: user.isDemo, ip: req.ip ?? null };
     return true;
   }
