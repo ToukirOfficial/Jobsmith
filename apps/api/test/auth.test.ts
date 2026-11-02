@@ -25,6 +25,13 @@ const refresh = (rt: string | undefined) => request(ctx.http).post('/api/v1/auth
 const me = (at: string | undefined) => request(ctx.http).get('/api/v1/me').set('Cookie', `js_at=${at}`);
 const codeFrom = (text: string) => /\b(\d{6})\b/.exec(text)?.[1] ?? '';
 
+describe('health', () => {
+  it('answers on /api/v1/health and /api/health without a login', async () => {
+    expect((await request(ctx.http).get('/api/v1/health')).body).toEqual({ ok: true });
+    expect((await request(ctx.http).get('/api/health')).body).toEqual({ ok: true });
+  });
+});
+
 describe('first-run setup', () => {
   it('creates the account once, then closes for good', async () => {
     expect((await anon(ctx).get('/setup')).body.setupNeeded).toBe(true);
