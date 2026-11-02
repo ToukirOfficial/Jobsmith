@@ -66,7 +66,7 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 - Application page: details, notes, timeline, channel.
 - Contacts with message log; interviews with prep, reflections and take-homes.
 
-**3. Save by link + sponsors** — [ ]
+**3. Save by link + sponsors** — [x] done
 - SSRF-safe fetcher in the queue (vetted IP, redirects, limits, robots.txt, LinkedIn/Indeed blocked → paste text). [SSRF]
 - JSON-LD `JobPosting` extraction into a review form. [fixtures]
 - Bookmarklet (sends URL, title and selected text to `/app/applications/new`).
@@ -109,8 +109,9 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 ## New libraries (beyond the fixed stack)
 
 **Needs your approval:** `@react-pdf/renderer` (Q1).
-**API:** `argon2`, `bullmq`, `ioredis`, `nodemailer`, `cheerio` (JSON-LD/HTML text), `ipaddr.js` (IP range checks), `robots-parser`, `csv-parse` + `csv-stringify` (register, import, export), `archiver` (zip export), `ical-generator`. AI providers use plain `fetch` (no SDKs).
+**API:** `argon2`, `bullmq`, `ioredis`, `nodemailer`, `csv-parse` + `csv-stringify` (register, import, export), `archiver` (zip export), `ical-generator`. AI providers use plain `fetch` (no SDKs).
 **Web:** `@dnd-kit/core` + `@dnd-kit/sortable` (board), `recharts` (shadcn charts), `lucide-react`, `sonner`, `radix-ui`. Dropped from the first draft as unnecessary: react-query, react-table, react-hook-form, date-fns (small in-house hooks and `Intl` cover them).
+**Not needed after all:** cheerio, ipaddr.js and robots-parser (small in-house code plus Node’s built-in `net.BlockList` does the job).
 **Dev:** `vitest`, `supertest`, `@types/*`. Postgres extension `pg_trgm` (sponsor name suggestions).
 
 ## Deploy notes (for when you deploy — I never deploy)

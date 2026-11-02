@@ -8,9 +8,13 @@ import { JobsModule } from './jobs/jobs.module.js';
 import { JobProcessors } from './jobs/processors.js';
 import { QUEUES, QueueService } from './jobs/queue.service.js';
 import { RedisService } from './redis.service.js';
+import { PrismaService } from './prisma.service.js';
 
 /** Scheduled jobs, in London time (plan.md deploy notes). */
-const SCHEDULES: { id: string; pattern: string; demoOnly?: boolean }[] = [];
+const SCHEDULES: { id: string; pattern: string; demoOnly?: boolean }[] = [
+  // The sponsor register: GOV.UK publishes on working days; we only download when the file changed.
+  { id: 'sponsor-register', pattern: '0 3 * * *' },
+];
 
 @Module({ imports: [CommonModule, JobsModule] })
 class WorkerModule {}
@@ -41,6 +45,9 @@ for (const s of SCHEDULES) {
   }
   await schedule.upsertJobScheduler(s.id, { pattern: s.pattern, tz: 'Europe/London' }, { name: s.id });
 }
+// First start: load the sponsor register straight away instead of waiting for 03:00.
+const prisma = app.get(PrismaService);
+if (!(await prisma.sponsorImport.count({ where: { status: 'DONE' } }))) await schedule.add('sponsor-register', {}, { jobId: 'sponsor-register-first-run' });
 logger.log(`Jobsmith worker running (${workers.length} queues, ${SCHEDULES.length} schedules)`);
 
 const stop = async () => {

@@ -342,6 +342,8 @@ model Sponsor {
   updatedAt      DateTime @updatedAt
 
   @@index([normalizedName])
+  /// Trigram index for "possible match" suggestions (pg_trgm, created in the sponsor_trigram migration).
+  @@index([normalizedName(ops: raw("gin_trgm_ops"))], type: Gin, map: "Sponsor_normalizedName_trgm_idx")
 }
 
 model SponsorImport {

@@ -203,3 +203,7 @@ export type SettingsInput = z.infer<typeof settingsSchema>;
 export type ApplicationInput = z.input<typeof applicationSchema>;
 export type ContactInput = z.input<typeof contactSchema>;
 export type InterviewInput = z.input<typeof interviewSchema>;
+
+// ---------- Saving a job by link ----------
+
+export const jobFetchSchema = z.object({ url: z.string().trim().min(1, 'Paste a job link.').max(2000) });

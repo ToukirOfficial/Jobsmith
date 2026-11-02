@@ -21,7 +21,8 @@ describe('applications', () => {
     expect(a.status).toBe(201);
     expect(a.body.company.name).toBe('Brightwave Ltd');
     expect(a.body.stage).toBe('SAVED');
-    expect(a.body.sponsor.status).toBe('UNKNOWN');
+    // UNKNOWN before the register is loaded, NOT_FOUND after (the sponsor tests may run first).
+    expect(['UNKNOWN', 'NOT_FOUND']).toContain(a.body.sponsor.status);
 
     const b = await c.post('/applications', job({ title: 'Backend Engineer', company: 'BRIGHTWAVE LIMITED' }));
     expect(b.body.company.id).toBe(a.body.company.id);

@@ -179,3 +179,28 @@ export interface Page<T> {
   items: T[];
   total: number;
 }
+
+/** Fields read from a job page, for the user to review before saving. */
+export interface JobDraft {
+  title: string | null;
+  company: string | null;
+  location: string | null;
+  workMode: WorkMode | null;
+  salaryMinPence: number | null;
+  salaryMaxPence: number | null;
+  currency: string | null;
+  closingDate: string | null;
+  description: string | null;
+  url: string | null;
+  /** How the fields were found: schema.org JobPosting data, AI extraction, or only the page text. */
+  method: 'JSON_LD' | 'AI' | 'PAGE_TEXT' | 'PASTED';
+}
+
+export interface JobFetchDto {
+  id: string;
+  status: 'PENDING' | 'DONE' | 'FAILED';
+  url: string;
+  draft: JobDraft | null;
+  error: string | null;
+  errorCode: string | null;
+}
