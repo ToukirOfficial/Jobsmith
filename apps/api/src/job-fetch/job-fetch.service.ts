@@ -7,6 +7,8 @@ import { QueueService } from '../jobs/queue.service.js';
 import { extractJobPosting, pageTextDraft } from './extract.js';
 import { robotsAllows } from './robots.js';
 import { JobExtractService } from '../ai/job-extract.service.js';
+import { config } from '../config.js';
+import { DEMO_JOB_PAGES, demoJobPage } from '../demo/demo.service.js';
 import { FetchError, checkUrl, safeFetch, type FetchOptions } from './safe-fetch.js';
 
 /** Job pages are fetched in the worker (project rule 8); the browser polls for the result. */
@@ -31,6 +33,10 @@ export class JobFetchService {
       const err = e as FetchError;
       throw new BadRequestException({ code: err.code, message: err.message, field: 'url' });
     }
+    // The demo never fetches the internet: only the sample pages listed on the Save a job page.
+    if (config().DEMO_MODE && !DEMO_JOB_PAGES[checked.href.replace(/\/$/, '')]) {
+      throw new BadRequestException({ code: 'DEMO_ONLY', message: 'In the demo, try one of the sample job links. Your own copy of Jobsmith can read real job pages.', field: 'url' });
+    }
     await this.limits.hit(`fetch:${userId}`, 60, 3600);
     const row = await this.prisma.jobFetch.create({ data: { userId, url: checked.href } });
     await this.queue.add('work', 'fetch-job', { id: row.id });
@@ -54,8 +60,9 @@ export class JobFetchService {
     if (!row || row.status !== 'PENDING') return;
     try {
       const url = new URL(row.url);
-      if (!(await this.robotsAllow(url))) throw new FetchError('ROBOTS', 'That website asks tools not to fetch this page. Paste the job text instead.');
-      const page = await safeFetch(row.url, JobFetchService.testOptions);
+      const demoHtml = config().DEMO_MODE ? demoJobPage(row.url) : null;
+      if (!demoHtml && !(await this.robotsAllow(url))) throw new FetchError('ROBOTS', 'That website asks tools not to fetch this page. Paste the job text instead.');
+      const page = demoHtml ? { url: row.url, html: demoHtml, status: 200 } : await safeFetch(row.url, JobFetchService.testOptions);
       // JSON-LD first (no AI); then AI extraction if the user has a key; else the page text for them to fill in.
       let draft = extractJobPosting(page.html, page.url);
       if (!draft) {

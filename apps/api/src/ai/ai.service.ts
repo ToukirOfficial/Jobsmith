@@ -6,6 +6,9 @@ import { decryptSecret, encryptSecret } from '../common/crypto.js';
 import { PrismaService } from '../prisma.service.js';
 import { AiError, checkedBaseUrl, complete, parseJsonObject, type AiRequest, type AiResponse, type AiTarget } from './providers.js';
 
+/** A demo visitor's own key can make this many calls in their 24 hours (ASSUMPTIONS.md). */
+export const DEMO_AI_CALLS = 20;
+
 export type FakeAi = (req: AiRequest, purpose: string) => Promise<AiResponse> | AiResponse;
 
 export interface AiResult<T> {
@@ -91,6 +94,10 @@ export class AiService {
   }
 
   private async checkLimit(userId: string) {
+    const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { isDemo: true } });
+    if (u?.isDemo && (await this.prisma.aiCall.count({ where: { userId } })) >= DEMO_AI_CALLS) {
+      throw new AiError('LIMIT', `The demo allows ${DEMO_AI_CALLS} AI requests per visitor. Run your own copy of Jobsmith for more.`);
+    }
     const s = await this.prisma.aiSettings.findUnique({ where: { userId }, select: { monthlyLimit: true } });
     if (!s?.monthlyLimit) return;
     if ((await this.usage(userId)).requests >= s.monthlyLimit) throw new AiError('LIMIT', `You’ve reached your monthly limit of ${s.monthlyLimit} AI requests. Change it in Settings → AI.`);

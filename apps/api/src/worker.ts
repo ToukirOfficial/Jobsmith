@@ -18,6 +18,8 @@ const SCHEDULES: { id: string; pattern: string; demoOnly?: boolean }[] = [
   { id: 'reminders', pattern: '*/5 * * * *' },
   // Expired downloads (exports, one-off PDFs).
   { id: 'cleanup', pattern: '17 * * * *' },
+  // Demo only: visitors' private copies (and any key they tried) are deleted 24 hours after they start.
+  { id: 'demo-purge', pattern: '7 * * * *', demoOnly: true },
 ];
 
 @Module({ imports: [CommonModule, JobsModule] })

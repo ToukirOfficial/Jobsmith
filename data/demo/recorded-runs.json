@@ -1,0 +1,59 @@
+{
+  "note": "Fictional recorded agent runs for the public demo. AI-step outputs are replayed with these timings; the sponsor, salary, CV pick and follow-up steps run for real. Every company and person is made up.",
+  "runs": [
+    {
+      "company": "Atlas Freight Software",
+      "timings": { "READ_JOB": 3800, "SPONSOR_CHECK": 600, "SALARY_CHECK": 500, "PICK_CV": 2900, "COVER_LETTER": 9200, "MESSAGE": 3600, "FOLLOW_UP": 400 },
+      "READ_JOB": {
+        "role": "Node.js Developer",
+        "seniority": "MID",
+        "mustHave": ["Node.js", "TypeScript", "PostgreSQL", "BullMQ or similar queues"],
+        "niceToHave": ["Logistics domain"],
+        "salary": "£45,000 – £52,000",
+        "location": "Manchester (remote in the UK)",
+        "closingDate": null,
+        "summary": "Atlas Freight Software builds route planning tools for haulage firms and wants a Node.js developer to own APIs and background jobs. The role is remote within the UK with occasional days in Manchester.",
+        "source": "AI"
+      },
+      "PICK_CV_EXPLANATION": "Backend focus is the strongest match: it covers Node.js, TypeScript, PostgreSQL and your BullMQ migration, which the advert lists as must-haves. Logistics experience is the only gap, and it is listed as nice to have.",
+      "COVER_LETTER": "Dear Hiring Manager,\n\nI’d like to apply for the Node.js Developer role at Atlas Freight Software. At Fernleaf Studio I moved our hand-rolled job runner to BullMQ queues, which removed a weekly on-call problem, and queues sit at the centre of what you describe.\n\nMost of my work is in Node.js and TypeScript with PostgreSQL underneath. I built the document export service that now turns 4,000 contracts a month into accessible PDFs, and I cut our main dashboard’s load time from 3.1 to 1.2 seconds by moving reports to the server and adding the right indexes.\n\nI haven’t worked in logistics, but I like domains where a slow or failed job costs someone real money, and I’m used to making that kind of work boring and reliable.\n\nI’d be glad to talk through how you run your background jobs today.\n\nBest wishes,\nAlex Morgan",
+      "MESSAGE": { "recipient": "HIRING_MANAGER", "message": "Hi there, I’ve just applied for the Node.js Developer role at Atlas Freight. At my current job I moved our background jobs onto BullMQ and cut a slow dashboard from 3.1 to 1.2 seconds with better PostgreSQL indexes. If it’s useful, I’d be happy to have a short call about how your team handles queues." }
+    },
+    {
+      "company": "Sablewood Studio",
+      "timings": { "READ_JOB": 4200, "SPONSOR_CHECK": 700, "SALARY_CHECK": 500, "PICK_CV": 3100, "COVER_LETTER": 10400, "MESSAGE": 3300, "FOLLOW_UP": 400 },
+      "READ_JOB": {
+        "role": "Full-stack Engineer",
+        "seniority": "MID",
+        "mustHave": ["TypeScript", "React", "Node.js", "PostgreSQL", "Next.js"],
+        "niceToHave": ["Design tooling", "Figma plugins"],
+        "salary": "£46,000 – £54,000",
+        "location": "Bristol (hybrid)",
+        "closingDate": null,
+        "summary": "Sablewood Studio makes tools for design teams and is hiring a full-stack engineer to work across a Next.js front end and a Node.js API. It is a small product team with frequent releases.",
+        "source": "AI"
+      },
+      "PICK_CV_EXPLANATION": "General full-stack covers the whole stack they ask for: TypeScript, React, Next.js, Node.js and PostgreSQL. Design tooling and Figma plugins are missing, but both are nice to have rather than required.",
+      "COVER_LETTER": "Dear Hiring Manager,\n\nI’d like to apply for the Full-stack Engineer role at Sablewood Studio. I build features end to end in TypeScript, from the PostgreSQL schema to the React screen, and I care about the small details people notice when they use a tool every day.\n\nAt Fernleaf Studio I cut our main dashboard’s load time from 3.1 to 1.2 seconds by moving reports to server-side rendering, and I built a document export service that now produces 4,000 accessible PDFs a month. Before that, at Larchmont Digital, I shipped more than 20 React features, each behind a feature flag with automated tests.\n\nI haven’t built Figma plugins yet. I’d like to learn, and I’d bring the habit of measuring what I change so we know a release helped.\n\nI’d be glad to show you some of the work.\n\nBest wishes,\nAlex Morgan",
+      "MESSAGE": { "recipient": "HIRING_MANAGER", "message": "Hi there, I’ve applied for the Full-stack Engineer role at Sablewood. I work across Next.js and Node.js with PostgreSQL, and recently cut a slow dashboard from 3.1 to 1.2 seconds with server-side rendering. Would you be open to a short chat about the team’s plans for the editor?" }
+    },
+    {
+      "company": "Cobalt & Pine",
+      "timings": { "READ_JOB": 3500, "SPONSOR_CHECK": 600, "SALARY_CHECK": 400, "PICK_CV": 2700, "COVER_LETTER": 8800, "MESSAGE": 3100, "FOLLOW_UP": 400 },
+      "READ_JOB": {
+        "role": "Software Engineer",
+        "seniority": "MID",
+        "mustHave": ["TypeScript", "React", "Node.js", "PostgreSQL", "Automated testing"],
+        "niceToHave": ["Kafka", "Go"],
+        "salary": "£58,000 – £68,000",
+        "location": "London (hybrid)",
+        "closingDate": null,
+        "summary": "Cobalt & Pine is hiring a software engineer for a product team working in TypeScript across React and Node.js. They value automated testing and want someone comfortable owning features from design to release.",
+        "source": "AI"
+      },
+      "PICK_CV_EXPLANATION": "General full-stack matches every must-have, including automated testing. Kafka and Go are missing; both are nice to have, so leave them off unless you have real experience.",
+      "COVER_LETTER": "Dear Hiring Manager,\n\nI’d like to apply for the Software Engineer role at Cobalt & Pine. I own features from the database to the screen in TypeScript, and I write the tests as I go, which your advert puts near the top.\n\nAt Fernleaf Studio I built a document export service in Node.js that now handles 4,000 contracts a month, and I led our move from a hand-rolled job runner to BullMQ. I also wrote the team’s testing guide and review code for three junior developers. At Larchmont Digital I shipped more than 20 React features, each with automated tests.\n\nI haven’t used Kafka or Go in production. I’m comfortable learning a new tool when the problem needs it, and I’d start by reading how your services already talk to each other.\n\nI’d be glad to talk it through.\n\nBest wishes,\nAlex Morgan",
+      "MESSAGE": { "recipient": "HIRING_MANAGER", "message": "Hi there, I’ve applied for the Software Engineer role at Cobalt & Pine. I write TypeScript across React and Node.js, wrote my current team’s testing guide, and led a move of our background jobs to BullMQ. Would a short call next week be useful?" }
+    }
+  ]
+}

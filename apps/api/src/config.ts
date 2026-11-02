@@ -12,6 +12,8 @@ export const envSchema = z
     APP_URL: z.url().default('http://localhost:8035'),
     API_PORT: z.coerce.number().int().default(8135),
     API_HOST: z.string().default('127.0.0.1'),
+    /** Which proxies to trust for the client IP (rate limits). Docker: "loopback, uniquelocal". */
+    TRUST_PROXY: z.string().default('loopback'),
     DATABASE_URL: z.string().min(1),
     REDIS_URL: z.string().default('redis://127.0.0.1:6379/5'),
     REDIS_PREFIX: z.string().regex(/^[a-z0-9-]+$/).default('jobsmith'),

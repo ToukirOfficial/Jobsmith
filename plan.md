@@ -96,7 +96,7 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 - Agent: BullMQ job, 7 typed steps, Zod-validated with one retry, saved, SSE live progress, agent view, save to application, re-run a step; AI steps show "Add a key" without one. [step output validation, fake provider]
 - `evals/` set + runner (manual, own key).
 
-**8. Landing, demo, self-hosting** — [ ]
+**8. Landing, demo, self-hosting** — [x] done
 - Landing page at `/` with animated agent run, FAQ, self-host command.
 - Demo mode: fictional seed (~25 applications, 3 CV versions, 8 weeks of stats), 3 recorded runs replayed, demo mail viewer, safe demo URL list, sign-up off, nightly reset.
 - Demo "try your own key": session-only, encrypted, deleted after 24h, strict rate limits. [demo key expiry]
@@ -116,9 +116,10 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 
 ## Deploy notes (for when you deploy — I never deploy)
 
-- Three Node processes: web (8035), API (8135), **worker** (`node dist/worker.js`, no port). The worker must run for job fetching, PDFs, agent runs, reminders, emails, imports/exports and the register update.
-- Scheduled jobs are BullMQ repeatable jobs registered by the worker on start (no system cron): reminders sweep every 5 min; sponsor register check daily 03:00 UTC (downloads only when GOV.UK publishes a new file, ~120k rows); demo reset nightly and demo key purge hourly (demo only).
-- Env: `DATABASE_URL`, `REDIS_URL` (db per Q2), `JWT_*` secrets, `ENCRYPTION_KEY` (32 bytes, for AI keys — losing it makes saved keys unreadable), `SMTP_*`, `SIGNUP_ENABLED`, `DEMO_MODE`, `APP_URL`, `STORAGE_DIR` (outside any public folder, needs backups with the database), `TRUST_PROXY`.
-- Migrations run with `prisma migrate deploy` before starting the API; dump the database first.
-- nginx: proxy `/api` to 8135, everything else to 8035; disable buffering on `/api/v1/agent-runs/*/stream` (SSE).
-- Outbound access needed: chosen AI provider, user-requested job pages, `www.gov.uk` / `assets.publishing.service.gov.uk`, SMTP host.
+- Three Node processes: web (8035), API (8135), **worker** (`node dist/worker.js`, no port). The worker must run for job fetching, PDFs, agent runs, reminders, emails, imports/exports and the register update. With Docker: `docker compose up -d` runs all five services (web, api, worker, postgres, redis); the API applies migrations on start.
+- Scheduled jobs are BullMQ job schedulers registered by the worker on start (no system cron), Europe/London time: reminders sweep every 5 min; expired-download clean-up hourly (:17); sponsor register check daily 03:00 (downloads only when GOV.UK publishes a new file, ~143k rows; also runs once on the very first start); demo only: purge expired demo visitors hourly (:07).
+- Env (all in `.env.example`): `DATABASE_URL`, `REDIS_URL` (db 5 locally), `JWT_SECRET`, `ENCRYPTION_KEY` (32 bytes, for AI keys — back it up), `COOKIE_SECURE=true`, `MAIL_TRANSPORT`/`SMTP_*`, `SIGNUP_ENABLED`, `DEMO_MODE`, `APP_URL`, `STORAGE_DIR` (outside any public folder; back it up with the database), `TRUST_PROXY` (behind nginx on the same host: `loopback`), `AI_ALLOW_LOCAL_ENDPOINTS` (keep `false` on the public demo), `AI_MODEL_*`.
+- Migrations: `pnpm --filter @jobsmith/api db:deploy` (dump the database first).
+- nginx: proxy everything to 8035 (Next.js forwards `/api` to 8135 itself); `proxy_buffering off` for `/api/v1/agent-runs/` (SSE).
+- Outbound access needed: the AI providers users choose, user-requested job pages, `www.gov.uk` and `assets.publishing.service.gov.uk`, the SMTP host. The demo makes no job-page fetches at all.
+- Demo site (jobsmith.toukirahmedrony.com): `DEMO_MODE=true`, no SMTP needed, no host AI key exists anywhere.

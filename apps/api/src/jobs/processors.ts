@@ -7,6 +7,7 @@ import { PdfJobsService } from '../cv/pdf-jobs.service.js';
 import { RemindersService } from '../reminders/reminders.service.js';
 import { DataportService } from '../dataport/dataport.service.js';
 import { AgentService } from '../agent/agent.service.js';
+import { DemoService } from '../demo/demo.service.js';
 
 /**
  * Runs every queued job by name. The worker process calls this; tests call it directly with the jobs
@@ -24,6 +25,7 @@ export class JobProcessors {
     private readonly reminders: RemindersService,
     private readonly data: DataportService,
     private readonly agent: AgentService,
+    private readonly demo: DemoService,
   ) {}
 
   async run(queue: string, job: Pick<Job, 'name' | 'data'>): Promise<unknown> {
@@ -43,6 +45,8 @@ export class JobProcessors {
         return this.data.processImport(String(data['id']));
       case 'work:export':
         return this.data.processExport(String(data['id']));
+      case 'schedule:demo-purge':
+        return this.demo.purge();
       case 'schedule:cleanup':
         return this.data.cleanup();
       case 'schedule:reminders':

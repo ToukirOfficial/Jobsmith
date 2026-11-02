@@ -53,20 +53,21 @@ function Editor({ profile, initial }: { profile: ProfileDto; initial: CvVersionD
   const [v, setV] = useState(initial);
   const [status, setStatus] = useState<'saved' | 'saving' | 'dirty' | 'error'>('saved');
   const pdf = usePdfDownload();
-  const first = useRef(true);
+  const lastSaved = useRef(JSON.stringify(initial));
   const saving = useRef<Promise<unknown> | null>(null);
 
-  // Autosave a second after the last change.
+  // Autosave a second after the last real change.
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
+    const now = JSON.stringify(v);
+    if (now === lastSaved.current) return;
     setStatus('dirty');
     const t = setTimeout(() => {
       setStatus('saving');
       saving.current = api<CvVersionDto>(`/cv-versions/${v.id}`, { method: 'PATCH', body: { name: v.name || 'Untitled', headline: v.headline || null, summary: v.summary || null, template: v.template, selection: v.selection } })
-        .then(() => setStatus('saved'))
+        .then(() => {
+          lastSaved.current = now;
+          setStatus('saved');
+        })
         .catch((e) => {
           setStatus('error');
           toast.error(errorMessage(e));

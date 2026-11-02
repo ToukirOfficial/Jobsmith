@@ -35,6 +35,8 @@ import { toVersionDto } from '../cv/cv-versions.service.js';
 import { SponsorLookupService } from '../sponsors/sponsor-lookup.service.js';
 import { salaryRules } from '../insights/insights.service.js';
 import { ReminderPlanner } from '../reminders/reminder-planner.js';
+import { config } from '../config.js';
+import { demoRecordings, type Recording } from '../demo/demo.service.js';
 
 const notFound = () => new NotFoundException({ message: 'That agent run could not be found.' });
 const NO_KEY = 'Add an API key in Settings → AI to draft this. Everything else above works without one.';
@@ -102,8 +104,14 @@ export class AgentService {
     if (await this.prisma.agentRun.findFirst({ where: { applicationId, status: { in: ['QUEUED', 'RUNNING'] } }, select: { id: true } })) {
       throw new ConflictException({ code: 'RUN_ACTIVE', message: 'The agent is already working on this application.' });
     }
+    // Demo visitors without their own key watch a recorded run (AI steps replayed, the rest run for real).
+    let replay = false;
+    if (config().DEMO_MODE && !(await this.ai.hasKey(userId))) {
+      const a = await this.prisma.application.findUniqueOrThrow({ where: { id: applicationId }, select: { company: { select: { name: true } } } });
+      replay = demoRecordings().some((r) => r.company === a.company.name);
+    }
     const run = await this.prisma.agentRun.create({
-      data: { userId, applicationId, promptVersion: PROMPT_VERSION, steps: { create: AGENT_STEPS.map((name, index) => ({ userId, index, name })) } },
+      data: { userId, applicationId, replay, promptVersion: PROMPT_VERSION, steps: { create: AGENT_STEPS.map((name, index) => ({ userId, index, name })) } },
       include: RUN_INCLUDE,
     });
     await this.queue.add('work', 'agent', { id: run.id });
@@ -194,10 +202,12 @@ export class AgentService {
 
   async process(runId: string) {
     const run = await this.prisma.agentRun.findUnique({ where: { id: runId }, include: { steps: true } });
-    if (!run || run.replay || (run.status !== 'QUEUED' && run.status !== 'RUNNING')) return;
+    if (!run || (run.status !== 'QUEUED' && run.status !== 'RUNNING')) return;
     await this.prisma.agentRun.update({ where: { id: runId }, data: { status: 'RUNNING', startedAt: run.startedAt ?? new Date() } });
     await this.publish(runId);
     const ctx = await this.context(run.userId, run.applicationId);
+    const recording = run.replay ? demoRecordings().find((r) => r.company === ctx.app.company.name) : undefined;
+    const pause = (ms: number) => (config().NODE_ENV === 'test' ? Promise.resolve() : new Promise((r) => setTimeout(r, ms)));
     // Outputs of steps that already ran feed later ones (when one step is re-run).
     const outputs: Partial<Record<AgentStepName, unknown>> = Object.fromEntries(run.steps.filter((s) => s.status === 'DONE').map((s) => [s.name, s.output]));
     for (const step of [...run.steps].sort((a, b) => a.index - b.index)) {
@@ -206,9 +216,11 @@ export class AgentService {
       const name = step.name as AgentStepName;
       await this.prisma.agentStep.update({ where: { id: step.id }, data: { status: 'RUNNING', startedAt: new Date(), error: null } });
       await this.publish(runId);
-      const input = { applicationId: run.applicationId, promptVersion: PROMPT_VERSION, usesAi: AI_STEPS.includes(name) && ctx.hasKey };
+      const input = { applicationId: run.applicationId, promptVersion: PROMPT_VERSION, usesAi: AI_STEPS.includes(name) && ctx.hasKey, replay: !!recording };
       try {
-        const { output, tokensIn, tokensOut } = await this.runStep(name, ctx, outputs);
+        const started = Date.now();
+        const { output, tokensIn, tokensOut } = recording ? await this.replayStep(name, ctx, outputs, recording) : await this.runStep(name, ctx, outputs);
+        if (recording) await pause(Math.max(0, recording.timings[name] - (Date.now() - started)));
         const valid = STEP_SCHEMAS[name].parse(output);
         outputs[name] = valid;
         await this.prisma.agentStep.update({ where: { id: step.id }, data: { status: 'DONE', output: valid as Prisma.InputJsonValue, input, tokensIn, tokensOut, finishedAt: new Date() } });
@@ -252,7 +264,13 @@ export class AgentService {
           const m = matchKeywords(ctx.jobText, '');
           const t = app.title.toLowerCase();
           const seniority = /graduate|entry/.test(t) ? 'GRADUATE' : /junior/.test(t) ? 'JUNIOR' : /lead|principal|staff|head/.test(t) ? 'LEAD' : /senior/.test(t) ? 'SENIOR' : 'UNKNOWN';
-          const firstSentences = (app.description ?? '').replace(/\s+/g, ' ').split(/(?<=\.)\s/).slice(0, 2).join(' ').slice(0, 600);
+          // The first two sentences of real prose (headings and bullet lines are skipped).
+          const prose = (app.description ?? '')
+            .split(/\r?\n/)
+            .map((l) => l.trim())
+            .filter((l) => l.length > 40 && !/^[-•*]/.test(l))
+            .join(' ');
+          const firstSentences = prose.split(/(?<=\.)\s/).slice(0, 2).join(' ').slice(0, 600);
           const out: ReadJobOutput = {
             role: app.title,
             seniority,
@@ -371,6 +389,17 @@ export class AgentService {
         return { output: { date, reason }, ...none };
       }
     }
+  }
+
+  /** Demo replay: AI steps return the recorded output; deterministic steps run for real. */
+  private async replayStep(name: AgentStepName, ctx: Awaited<ReturnType<AgentService['context']>>, outputs: Partial<Record<AgentStepName, unknown>>, rec: Recording) {
+    const none = { tokensIn: 0, tokensOut: 0 };
+    if (name === 'READ_JOB') return { output: rec.READ_JOB, ...none };
+    if (name === 'COVER_LETTER') return { output: { letter: rec.COVER_LETTER }, ...none };
+    if (name === 'MESSAGE') return { output: rec.MESSAGE, ...none };
+    const live = await this.runStep(name, { ...ctx, hasKey: false }, outputs);
+    if (name === 'PICK_CV') return { output: { ...(live.output as object), explanation: rec.PICK_CV_EXPLANATION }, ...none };
+    return live;
   }
 
   /** The candidate facts the AI may use: the picked CV version if there is one, else the whole profile. */

@@ -11,10 +11,11 @@ import { CvModule } from './cv/cv.module.js';
 import { LettersRemindersModule } from './reminders/letters-reminders.module.js';
 import { DataportModule } from './dataport/dataport.module.js';
 import { AgentModule } from './agent/agent.module.js';
+import { DemoModule } from './demo/demo.module.js';
 import { HealthController } from './health/health.controller.js';
 
 @Module({
-  imports: [CommonModule, AuthModule, UsersModule, TrackerModule, JobFetchModule, CvModule, LettersRemindersModule, DataportModule, AgentModule, JobsModule],
+  imports: [CommonModule, AuthModule, UsersModule, TrackerModule, JobFetchModule, CvModule, LettersRemindersModule, DataportModule, AgentModule, DemoModule, JobsModule],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })

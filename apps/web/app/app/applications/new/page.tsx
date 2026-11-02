@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { api, errorMessage, ApiError } from '@/lib/api';
 import { useForm } from '@/lib/form';
+import { useSession } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
 type Mode = 'link' | 'paste' | 'manual';
@@ -59,8 +60,11 @@ const NOTES: Record<JobDraft['method'], { icon: typeof FileCheck2; tone: string;
   PASTED: { icon: ClipboardPaste, tone: 'bg-info-tint text-info', text: 'Your pasted text is in the description. Fill in the company and anything else from it.' },
 };
 
+const DEMO_LINKS = ['https://careers.demo-jobs.example/frontend-engineer', 'https://careers.demo-jobs.example/data-engineer', 'https://careers.demo-jobs.example/platform-engineer'];
+
 function NewJob() {
   const router = useRouter();
+  const { me } = useSession();
   const params = useSearchParams();
   const fromBookmarklet = params.has('bm');
   const [mode, setMode] = useState<Mode>(params.get('text') ? 'paste' : 'link');
@@ -169,6 +173,20 @@ function NewJob() {
                 )}
               </Field>
               <FormError message={fetchError} />
+              {me.demoMode ? (
+                <div className="rounded-md bg-spark-tint p-3 text-sm">
+                  <p className="mb-1.5 font-semibold">In the demo, try one of these sample adverts:</p>
+                  <ul className="space-y-1">
+                    {DEMO_LINKS.map((l) => (
+                      <li key={l}>
+                        <button type="button" className="font-mono text-xs text-brand hover:underline" onClick={() => setUrl(l)}>
+                          {l}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               {fetching ? (
                 <div className="space-y-2 pt-2" aria-busy="true" aria-label="Reading the job page">
                   <Skeleton className="h-9 w-full" />
