@@ -204,3 +204,43 @@ export interface JobFetchDto {
   error: string | null;
   errorCode: string | null;
 }
+
+export interface LetterTemplateDto {
+  id: string;
+  name: string;
+  body: string;
+  updatedAt: string;
+}
+
+export interface DraftDto {
+  id: string;
+  kind: 'COVER_LETTER' | 'LINKEDIN_NOTE' | 'FOLLOW_UP_EMAIL';
+  body: string;
+  updatedAt: string;
+}
+
+export interface InsightsDto {
+  keywords: (import('./keywords.js').KeywordMatch & { cvVersionId: string; cvVersionName: string }) | null;
+  versions: { id: string; name: string; score: number }[];
+  salary: import('./salary.js').SalaryCheck | null;
+  hasDescription: boolean;
+}
+
+export interface ReminderDto {
+  id: string;
+  kind: import('./enums.js').ReminderKind;
+  title: string;
+  dueAt: string;
+  dismissedAt: string | null;
+  application: { id: string; title: string; company: string } | null;
+}
+
+export interface CalendarEvent {
+  id: string;
+  kind: 'INTERVIEW' | 'TAKE_HOME' | 'CLOSING' | 'FOLLOW_UP';
+  title: string;
+  /** ISO instant for timed events, YYYY-MM-DD for all-day ones. */
+  start: string;
+  allDay: boolean;
+  applicationId: string;
+}

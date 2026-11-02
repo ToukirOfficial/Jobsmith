@@ -14,6 +14,8 @@ import { PrismaService } from './prisma.service.js';
 const SCHEDULES: { id: string; pattern: string; demoOnly?: boolean }[] = [
   // The sponsor register: GOV.UK publishes on working days; we only download when the file changed.
   { id: 'sponsor-register', pattern: '0 3 * * *' },
+  // Reminders: each due one is claimed once and emailed if wanted.
+  { id: 'reminders', pattern: '*/5 * * * *' },
 ];
 
 @Module({ imports: [CommonModule, JobsModule] })

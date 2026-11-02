@@ -22,6 +22,8 @@ import { PageHeader } from '@/components/app-shell';
 import { ContactsSection } from '@/components/application/contacts';
 import { InterviewsSection } from '@/components/application/interviews';
 import { SentSection } from '@/components/application/sent';
+import { DraftsSection } from '@/components/application/drafts';
+import { InsightsSection } from '@/components/application/insights';
 import { Confirm } from '@/components/confirm';
 import { FormDialog } from '@/components/form-dialog';
 import { DaysInStage, STAGE_STYLE, Salary, SponsorBadge, StageBadge } from '@/components/job-bits';
@@ -212,6 +214,8 @@ export default function ApplicationPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 space-y-6">
+          <InsightsSection applicationId={app.id} refreshKey={app.updatedAt} />
+          <DraftsSection applicationId={app.id} />
           <InterviewsSection applicationId={app.id} interviews={app.interviews} onChange={() => void reload()} />
           <ContactsSection applicationId={app.id} companyId={app.company.id} contacts={app.contacts} onChange={() => void reload()} />
           <Notes app={app} onSaved={setData} />

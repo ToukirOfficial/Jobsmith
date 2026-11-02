@@ -78,7 +78,7 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 - 3 ATS-friendly A4 templates; PDF generated in worker, served via owner-checked file route.
 - "Mark as applied": CV + cover letter snapshots, immutable. [snapshot immutability]
 
-**5. Letters, keyword match, salary, reminders** — [ ]
+**5. Letters, keyword match, salary, reminders** — [x] done
 - Letter templates with placeholders, per-application letter and message drafts, PDF export / copy.
 - Deterministic keyword match (skills dictionary + job text) with score; versioned salary rules file + salary check. [salary rule by date]
 - Reminders (follow-up N days, interview tomorrow, closing soon, take-home due), in-app + email, each sent once. [reminder scheduling]
@@ -109,7 +109,7 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 ## New libraries (beyond the fixed stack)
 
 **Needs your approval:** `@react-pdf/renderer` (Q1).
-**API:** `argon2`, `bullmq`, `ioredis`, `nodemailer`, `csv-parse` + `csv-stringify` (register, import, export), `archiver` (zip export), `ical-generator`. AI providers use plain `fetch` (no SDKs).
+**API:** `argon2`, `bullmq`, `ioredis`, `nodemailer`, `csv-parse` + `csv-stringify` (register, import, export), `archiver` (zip export); the iCal feed is generated in-house (no `ical-generator`). AI providers use plain `fetch` (no SDKs).
 **Web:** `@dnd-kit/core` + `@dnd-kit/sortable` (board), `recharts` (shadcn charts), `lucide-react`, `sonner`, `radix-ui`. Dropped from the first draft as unnecessary: react-query, react-table, react-hook-form, date-fns (small in-house hooks and `Intl` cover them).
 **Not needed after all:** cheerio, ipaddr.js and robots-parser (small in-house code plus Node’s built-in `net.BlockList` does the job).
 **Dev:** `vitest`, `supertest`, `@types/*`. Postgres extension `pg_trgm` (sponsor name suggestions).

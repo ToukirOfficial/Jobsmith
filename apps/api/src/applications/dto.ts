@@ -8,7 +8,7 @@ export type ApplicationRow = Application & { company: Pick<Company, 'id' | 'name
 
 export const APPLICATION_INCLUDE = {
   company: { select: { id: true, name: true, normalizedName: true, sponsorName: true } },
-  reminders: { where: { dismissedAt: null, sentAt: null }, orderBy: { dueAt: 'asc' as const }, take: 1, select: { kind: true, dueAt: true, title: true } },
+  reminders: { where: { dismissedAt: null }, orderBy: { dueAt: 'asc' as const }, take: 1, select: { kind: true, dueAt: true, title: true } },
 };
 
 /** The one place an application row becomes a response: only listed fields leave the API. */

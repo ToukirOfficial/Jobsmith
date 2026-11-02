@@ -207,3 +207,14 @@ export type InterviewInput = z.input<typeof interviewSchema>;
 // ---------- Saving a job by link ----------
 
 export const jobFetchSchema = z.object({ url: z.string().trim().min(1, 'Paste a job link.').max(2000) });
+
+// ---------- Letters, drafts, insights, reminders ----------
+
+export const letterTemplateSchema = z.object({ name: required(80, 'Template name'), body: required(10_000, 'The letter') });
+export const draftKindParam = z.object({ id: z.uuid('Not found.'), kind: z.enum(['COVER_LETTER', 'LINKEDIN_NOTE', 'FOLLOW_UP_EMAIL']) });
+export const draftSchema = z.object({ body: text(10_000) });
+export const fromTemplateSchema = z.object({ templateId: z.uuid() });
+export const insightsQuery = z.object({ cvVersionId: z.uuid().optional() });
+export const reminderListQuery = z.object({ scope: z.enum(['due', 'upcoming', 'all']).default('all') });
+export const reminderUpdateSchema = z.object({ dismissed: z.boolean() });
+export const calendarQuery = z.object({ from: isoDate, to: isoDate });
