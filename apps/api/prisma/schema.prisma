@@ -152,6 +152,7 @@ enum JobStatus {
 enum DataJobKind {
   EXPORT
   IMPORT
+  PDF
 }
 
 /// One row, id = 1, created by first-run setup. Its existence closes setup for good.

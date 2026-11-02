@@ -72,7 +72,7 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 - Bookmarklet (sends URL, title and selected text to `/app/applications/new`).
 - Sponsor register import via GOV.UK Content API (streamed, column checks), daily schedule, badge on cards and company page. [sponsor matching]
 
-**4. CV builder + PDF** — [ ]
+**4. CV builder + PDF** — [x] done
 - Structured profile editor (items + bullets).
 - CV versions: pick and order items and bullets, own headline/summary; live preview.
 - 3 ATS-friendly A4 templates; PDF generated in worker, served via owner-checked file route.

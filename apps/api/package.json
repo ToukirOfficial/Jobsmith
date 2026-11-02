@@ -18,6 +18,7 @@
     "evals": "node --env-file-if-exists=../../.env dist/evals.js"
   },
   "dependencies": {
+    "@jobsmith/pdf": "workspace:*",
     "@jobsmith/shared": "workspace:*",
     "@nestjs/common": "^12.3.2",
     "@nestjs/core": "^12.3.2",

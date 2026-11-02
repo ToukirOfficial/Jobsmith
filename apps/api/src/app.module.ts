@@ -7,10 +7,11 @@ import { UsersModule } from './users/users.module.js';
 import { TrackerModule } from './applications/tracker.module.js';
 import { JobFetchModule } from './job-fetch/job-fetch.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
+import { CvModule } from './cv/cv.module.js';
 import { HealthController } from './health/health.controller.js';
 
 @Module({
-  imports: [CommonModule, AuthModule, UsersModule, TrackerModule, JobFetchModule, JobsModule],
+  imports: [CommonModule, AuthModule, UsersModule, TrackerModule, JobFetchModule, CvModule, JobsModule],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })

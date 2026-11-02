@@ -5,3 +5,4 @@ export * from './money.js';
 export * from './schemas.js';
 export * from './types.js';
 export * from './normalise.js';
+export * from './cv.js';

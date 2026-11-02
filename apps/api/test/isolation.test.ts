@@ -34,6 +34,14 @@ const routes = (r: OwnedRecords): [string, string, object?][] => [
   ['post', `/applications/${r.applicationId}/contacts`, { contactId: r.contactId }],
   ['patch', `/interviews/${r.interviewId}`, { prepNotes: 'x' }],
   ['delete', `/interviews/${r.interviewId}`],
+  ['get', `/cv-versions/${r.cvVersionId}`],
+  ['patch', `/cv-versions/${r.cvVersionId}`, { name: 'x' }],
+  ['post', `/cv-versions/${r.cvVersionId}/pdf`],
+  ['post', `/cv-versions/${r.cvVersionId}/duplicate`],
+  ['delete', `/cv-versions/${r.cvVersionId}`],
+  ['put', `/profile/items/${r.profileItemId}`, { kind: 'SKILLS', data: { group: 'x', skills: [] } }],
+  ['delete', `/profile/items/${r.profileItemId}`],
+  ['post', `/applications/${r.applicationId}/apply`, { channel: 'EMAIL', cvVersionId: r.cvVersionId }],
 ];
 
 describe('user data isolation', () => {
@@ -45,12 +53,14 @@ describe('user data isolation', () => {
   });
 
   it('lists never include another user’s records', async () => {
-    for (const url of ['/applications', '/companies', '/contacts', '/interviews']) {
+    for (const url of ['/applications', '/companies', '/contacts', '/interviews', '/cv-versions', '/profile']) {
       const res = await bClient.get(url);
       expect(res.status, url).toBe(200);
       expect(JSON.stringify(res.body), url).not.toContain(a.applicationId);
       expect(JSON.stringify(res.body), url).not.toContain(a.companyId);
       expect(JSON.stringify(res.body), url).not.toContain(a.contactId);
+      expect(JSON.stringify(res.body), url).not.toContain(a.cvVersionId);
+      expect(JSON.stringify(res.body), url).not.toContain(a.profileItemId);
     }
   });
 
@@ -61,6 +71,8 @@ describe('user data isolation', () => {
     expect(app.archivedAt).toBeNull();
     expect(await ctx.prisma.contact.count({ where: { id: a.contactId } })).toBe(1);
     expect(await ctx.prisma.interview.count({ where: { id: a.interviewId } })).toBe(1);
+    expect((await ctx.prisma.cvVersion.findUniqueOrThrow({ where: { id: a.cvVersionId } })).name).toBe('Private version');
+    expect(await ctx.prisma.snapshot.count({ where: { applicationId: a.applicationId } })).toBe(0);
   });
 
   it('every route needs a login unless marked public', async () => {

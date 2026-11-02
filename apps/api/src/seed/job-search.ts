@@ -1,6 +1,7 @@
 import { normaliseCompany, normaliseTitle, type Channel, type Stage } from '@jobsmith/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { ReminderPlanner } from '../reminders/reminder-planner.js';
+import { seedProfile } from './profile.js';
 
 /**
  * A fictional, realistic job search for the demo and the local seed: a full-stack developer in the UK on a
@@ -101,6 +102,7 @@ export async function seedJobSearch(tx: Prisma.TransactionClient, userId: string
     },
   });
 
+  const versionIds = await seedProfile(tx, userId);
   const companyIds = new Map<string, string>();
   const appIds = new Map<string, string>();
   const positions = new Map<Stage, number>();
@@ -138,6 +140,8 @@ export async function seedJobSearch(tx: Prisma.TransactionClient, userId: string
         appliedAt: appliedStep ? ago(appliedStep[1], 11) : null,
         firstReplyAt: replyStep ? ago(replyStep[1], 14) : null,
         archivedAt: a.archived ? ago(5) : null,
+        // Legal and document roles got the legal-tech CV, backend roles the backend one, the rest the general one.
+        cvVersionId: appliedStep ? versionIds[/legal/i.test(a.title + a.company) ? 1 : /backend|platform|node/i.test(a.title) ? 2 : 0]! : null,
         createdAt: ago(a.saved, 9),
       },
     });

@@ -21,6 +21,7 @@ import {
 import { PageHeader } from '@/components/app-shell';
 import { ContactsSection } from '@/components/application/contacts';
 import { InterviewsSection } from '@/components/application/interviews';
+import { SentSection } from '@/components/application/sent';
 import { Confirm } from '@/components/confirm';
 import { FormDialog } from '@/components/form-dialog';
 import { DaysInStage, STAGE_STYLE, Salary, SponsorBadge, StageBadge } from '@/components/job-bits';
@@ -250,6 +251,12 @@ export default function ApplicationPage() {
               </p>
             ) : null}
           </section>
+
+          <SentSection app={app} onChange={(a) => {
+            setData(a);
+            // Snapshot PDFs are made in the background; check again shortly.
+            setTimeout(() => void reload(), 2500);
+          }} />
 
           <Section title="Details">
             <dl>

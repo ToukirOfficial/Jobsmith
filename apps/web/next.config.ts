@@ -7,7 +7,8 @@ const isDev = process.env['NODE_ENV'] === 'development';
 /** CSP without nonces so pages stay static: only our own scripts, styles, fonts, images and API. */
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+  // 'wasm-unsafe-eval': the CV preview's layout engine (yoga, in react-pdf) is WebAssembly.
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data:",
   "font-src 'self'",
@@ -23,7 +24,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: 'standalone',
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
-  transpilePackages: ['@jobsmith/shared'],
+  transpilePackages: ['@jobsmith/shared', '@jobsmith/pdf'],
   // The browser only ever talks to this origin; Next.js forwards /api/* to NestJS.
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiUrl}/api/:path*` }];
