@@ -90,7 +90,7 @@ Prisma · Queue (BullMQ queues + worker entry) · Auth · Setup · Users (settin
 - CSV import with column mapping.
 → Journeys 1, 2, 4 and 5 work fully with no AI key.
 
-**7. AI settings + agent** — [ ]
+**7. AI settings + agent** — [x] done
 - Provider interface (Gemini default, OpenAI, Anthropic, OpenAI-compatible) via `fetch`; encrypted write-only key, test key, usage + monthly limit. [encryption, never returned]
 - Versioned prompts in `prompts/` with untrusted-data wrapping; AI extraction fallback on save-by-link; AI keyword explanation.
 - Agent: BullMQ job, 7 typed steps, Zod-validated with one retry, saved, SSE live progress, agent view, save to application, re-run a step; AI steps show "Add a key" without one. [step output validation, fake provider]

@@ -386,6 +386,8 @@ model Application {
   channel          Channel?
   appliedAt        DateTime?
   firstReplyAt     DateTime?
+  /// A follow-up date the user chose (for example from the agent); overrides "applied + N days".
+  followUpOn       DateTime?  @db.Date
   archivedAt       DateTime?
   cvVersionId      String?    @db.Uuid
   cvSnapshotId     String?    @unique @db.Uuid

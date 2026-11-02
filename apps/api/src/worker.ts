@@ -36,7 +36,7 @@ const workers = Object.values(QUEUES).map(
     new Worker(name, (job) => processors.run(name, job), {
       connection: redis.connection(),
       prefix: `${cfg.REDIS_PREFIX}:bull`,
-      concurrency: name === 'mail' ? 4 : 2,
+      concurrency: name === 'mail' ? 4 : 3,
     }),
 );
 for (const w of workers) w.on('failed', (job, err) => logger.error(`${w.name}:${job?.name} failed: ${err.message}`));

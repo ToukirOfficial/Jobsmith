@@ -36,6 +36,11 @@ Things the PRD and FEATURES list don't say, and what I decided. Change any of th
 - Steps 2, 3, 4 and 7 never call AI. Steps 1, 5 and 6 need a key.
 - Default models (overridable in settings or env): Gemini `gemini-2.5-flash`, OpenAI `gpt-5-mini`, Anthropic `claude-haiku-5-5`. Checked against each provider's current list before Phase 7.
 - Monthly limit counts requests in the user's time zone's calendar month; when reached, AI steps stop with a clear message.
+- An OpenAI-compatible endpoint is chosen by the user, so it is treated like a fetched URL: private and local addresses are refused unless the server owner sets `AI_ALLOW_LOCAL_ENDPOINTS=true` (needed for Ollama on the same machine; never allowed in the demo). On a shared install this stops one user from probing the server's internal network.
+- An AI answer that fails its schema (bad JSON, too long or short, banned clichés) is retried once with the problems listed, then shown as a step error; nothing invalid is saved.
+- "Save to application" stores the reviewed cover letter and message as drafts (the message as the LinkedIn note) and the follow-up date on the application, which then drives the follow-up reminder.
+- If the AI explanation of the CV match fails, the deterministic CV pick still stands without it.
+- Live progress uses Server-Sent Events; the browser falls back to polling every 1.2 seconds if the stream drops.
 - One agent run per application at a time; a new run is refused while one is running.
 
 ## Visa salary rules

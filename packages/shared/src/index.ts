@@ -8,3 +8,4 @@ export * from './normalise.js';
 export * from './cv.js';
 export * from './salary.js';
 export * from './keywords.js';
+export * from './agent.js';

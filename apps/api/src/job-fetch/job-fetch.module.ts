@@ -4,6 +4,8 @@ import { idParam, jobFetchSchema } from '@jobsmith/shared';
 import type { UserContext } from '../common/auth-context.js';
 import { CurrentUser } from '../common/decorators.js';
 import { JobFetchService } from './job-fetch.service.js';
+import { AiService } from '../ai/ai.service.js';
+import { JobExtractService } from '../ai/job-extract.service.js';
 
 @Controller('job-fetch')
 export class JobFetchController {
@@ -20,5 +22,5 @@ export class JobFetchController {
   }
 }
 
-@Module({ controllers: [JobFetchController], providers: [JobFetchService], exports: [JobFetchService] })
+@Module({ controllers: [JobFetchController], providers: [JobFetchService, JobExtractService, AiService], exports: [JobFetchService] })
 export class JobFetchModule {}

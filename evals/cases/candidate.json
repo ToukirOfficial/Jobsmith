@@ -1,0 +1,6 @@
+{
+  "name": "Robin Vale",
+  "styleNote": "Plain and direct. Short sentences. No exclamation marks.",
+  "facts": ["Fernleaf Studio", "4,000 contracts", "BullMQ", "3.1", "PostgreSQL"],
+  "profile": "Full-stack developer\nExperience:\n- Software Developer, Fernleaf Studio, Manchester, Feb 2024 – Present\n  - Built a document export service in Node.js and TypeScript that turns 4,000 contracts a month into accessible PDFs\n  - Cut the main dashboard's load time from 3.1 s to 1.2 s with server-side rendering and PostgreSQL indexes\n  - Moved a hand-rolled job runner to BullMQ queues, removing a weekly on-call problem\n- Junior Web Developer, Larchmont Digital, Leeds, Aug 2022 – Jan 2024\n  - Shipped 20+ React features with automated tests\nSkills:\n- Languages: TypeScript, JavaScript, SQL\n- Frameworks and tools: React, Next.js, Node.js, NestJS, PostgreSQL, Redis, Docker\nEducation:\n- MSc Advanced Computer Science, University of Northbridge"
+}

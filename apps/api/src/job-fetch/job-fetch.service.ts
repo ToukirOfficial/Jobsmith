@@ -6,6 +6,7 @@ import { RateLimitService } from '../common/rate-limit.service.js';
 import { QueueService } from '../jobs/queue.service.js';
 import { extractJobPosting, pageTextDraft } from './extract.js';
 import { robotsAllows } from './robots.js';
+import { JobExtractService } from '../ai/job-extract.service.js';
 import { FetchError, checkUrl, safeFetch, type FetchOptions } from './safe-fetch.js';
 
 /** Job pages are fetched in the worker (project rule 8); the browser polls for the result. */
@@ -19,6 +20,7 @@ export class JobFetchService {
     private readonly prisma: PrismaService,
     private readonly limits: RateLimitService,
     private readonly queue: QueueService,
+    private readonly extractor: JobExtractService,
   ) {}
 
   async request(userId: string, url: string): Promise<JobFetchDto> {
@@ -54,7 +56,12 @@ export class JobFetchService {
       const url = new URL(row.url);
       if (!(await this.robotsAllow(url))) throw new FetchError('ROBOTS', 'That website asks tools not to fetch this page. Paste the job text instead.');
       const page = await safeFetch(row.url, JobFetchService.testOptions);
-      const draft = extractJobPosting(page.html, page.url) ?? pageTextDraft(page.html, page.url);
+      // JSON-LD first (no AI); then AI extraction if the user has a key; else the page text for them to fill in.
+      let draft = extractJobPosting(page.html, page.url);
+      if (!draft) {
+        const text = pageTextDraft(page.html, page.url);
+        draft = (await this.extractor.extract(row.userId, page.url, `${text.title ?? ''}\n${text.description ?? ''}`)) ?? text;
+      }
       await this.prisma.jobFetch.update({ where: { id }, data: { status: 'DONE', result: { draft } as unknown as Prisma.InputJsonValue } });
     } catch (e) {
       const err = e instanceof FetchError ? e : new FetchError('NETWORK', 'That page couldn’t be read. Paste the job text instead.');

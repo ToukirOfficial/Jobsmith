@@ -24,6 +24,7 @@ import { InterviewsSection } from '@/components/application/interviews';
 import { SentSection } from '@/components/application/sent';
 import { DraftsSection } from '@/components/application/drafts';
 import { InsightsSection } from '@/components/application/insights';
+import { AgentPanel } from '@/components/application/agent-panel';
 import { Confirm } from '@/components/confirm';
 import { FormDialog } from '@/components/form-dialog';
 import { DaysInStage, STAGE_STYLE, Salary, SponsorBadge, StageBadge } from '@/components/job-bits';
@@ -223,6 +224,7 @@ export default function ApplicationPage() {
         </div>
 
         <aside className="space-y-6">
+          <AgentPanel applicationId={app.id} />
           <section className={cn('rounded-lg border border-border border-t-[3px] bg-paper p-4', STAGE_STYLE[app.stage].top)}>
             <div className="mb-3 flex items-center justify-between">
               <StageBadge stage={app.stage} />

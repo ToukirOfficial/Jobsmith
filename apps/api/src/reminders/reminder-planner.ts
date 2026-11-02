@@ -37,7 +37,7 @@ export class ReminderPlanner {
     if (!app.archivedAt) {
       // Follow up N days after applying, while still waiting for a reply.
       if (app.stage === 'APPLIED' && app.appliedAt) {
-        const day = addDays(dateKey(app.appliedAt, tz), app.user.followUpDays);
+        const day = app.followUpOn ? app.followUpOn.toISOString().slice(0, 10) : addDays(dateKey(app.appliedAt, tz), app.user.followUpDays);
         wanted.push({ kind: 'FOLLOW_UP', dueAt: at9(day), title: `Follow up: ${label}`, dedupeKey: `followup:${app.id}:${day}` });
       }
       // Closing soon, while the job is still only saved.

@@ -36,6 +36,8 @@ export const envSchema = z
     AI_MODEL_OPENAI: z.string().default('gpt-5-mini'),
     AI_MODEL_ANTHROPIC: z.string().default('claude-haiku-5-5'),
     AI_TIMEOUT_MS: z.coerce.number().int().min(5_000).max(300_000).default(60_000),
+    /** Allow an OpenAI-compatible endpoint on this machine or private network (Ollama). Off by default: on a shared install it would let users reach internal services. */
+    AI_ALLOW_LOCAL_ENDPOINTS: bool('false'),
     /** Sponsor register source (GOV.UK Content API). */
     SPONSOR_REGISTER_URL: z.url().default('https://www.gov.uk/api/content/government/publications/register-of-licensed-sponsors-workers'),
   })
@@ -52,6 +54,7 @@ export const envSchema = z
     // The demo never sends email and never opens sign-up.
     SIGNUP_ENABLED: c.DEMO_MODE ? false : c.SIGNUP_ENABLED,
     MAIL_ENABLED: c.MAIL_TRANSPORT === 'smtp' && !c.DEMO_MODE,
+    AI_ALLOW_LOCAL_ENDPOINTS: c.DEMO_MODE ? false : c.AI_ALLOW_LOCAL_ENDPOINTS,
   }));
 
 export type Config = z.infer<typeof envSchema>;
