@@ -1,0 +1,734 @@
+// Jobsmith data model. Every user-owned table has an indexed userId and every query is scoped by it.
+// Ids are UUIDv7, times are UTC, salaries are integer pence per year with a currency.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Stage {
+  SAVED
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum Channel {
+  COMPANY_SITE
+  LINKEDIN
+  RECRUITER
+  REFERRAL
+  JOB_BOARD
+  EMAIL
+  OTHER
+}
+
+enum WorkMode {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum JobSource {
+  MANUAL
+  LINK
+  PASTE
+  BOOKMARKLET
+  IMPORT
+}
+
+enum CodePurpose {
+  LOGIN
+  RESET
+}
+
+enum ProfileKind {
+  EXPERIENCE
+  PROJECT
+  SKILLS
+  EDUCATION
+  CERTIFICATION
+  LINK
+}
+
+enum CvTemplate {
+  CLASSIC
+  MODERN
+  COMPACT
+}
+
+enum SnapshotKind {
+  CV
+  COVER_LETTER
+}
+
+enum FileKind {
+  CV_PDF
+  LETTER_PDF
+  EXPORT
+  IMPORT
+}
+
+enum DraftKind {
+  COVER_LETTER
+  LINKEDIN_NOTE
+  FOLLOW_UP_EMAIL
+}
+
+enum ContactType {
+  RECRUITER
+  HIRING_MANAGER
+  REFERRAL
+  INTERVIEWER
+  OTHER
+}
+
+enum LogDirection {
+  SENT
+  RECEIVED
+}
+
+enum LogChannel {
+  EMAIL
+  LINKEDIN
+  PHONE
+  IN_PERSON
+  OTHER
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  TECHNICAL
+  TAKE_HOME
+  SYSTEM_DESIGN
+  BEHAVIOURAL
+  FINAL
+}
+
+enum ReminderKind {
+  FOLLOW_UP
+  INTERVIEW_TOMORROW
+  CLOSING_SOON
+  TAKE_HOME_DUE
+}
+
+enum AiProvider {
+  GEMINI
+  OPENAI
+  ANTHROPIC
+  OPENAI_COMPATIBLE
+}
+
+enum RunStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum StepStatus {
+  PENDING
+  RUNNING
+  DONE
+  SKIPPED
+  FAILED
+}
+
+enum JobStatus {
+  PENDING
+  DONE
+  FAILED
+}
+
+enum DataJobKind {
+  EXPORT
+  IMPORT
+}
+
+/// One row, id = 1, created by first-run setup. Its existence closes setup for good.
+model InstallState {
+  id          Int      @id
+  completedAt DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id              String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  email           String    @unique
+  passwordHash    String
+  name            String
+  homeCity        String?
+  timeZone        String    @default("Europe/London")
+  workAuthNotes   String?
+  targetRoles     String[]
+  targetLocations String[]
+  styleNote       String?
+  weeklyTarget    Int       @default(5)
+  followUpDays    Int       @default(7)
+  emailReminders  Boolean   @default(true)
+  icalToken       String    @unique
+  isDemo          Boolean   @default(false)
+  demoExpiresAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  refreshTokens  RefreshToken[]
+  authCodes      AuthCode[]
+  profile        Profile?
+  profileItems   ProfileItem[]
+  profileBullets ProfileBullet[]
+  cvVersions     CvVersion[]
+  companies      Company[]
+  applications   Application[]
+  stageEvents    StageEvent[]
+  snapshots      Snapshot[]
+  files          StoredFile[]
+  letterTemplates LetterTemplate[]
+  drafts         Draft[]
+  contacts       Contact[]
+  applicationContacts ApplicationContact[]
+  contactLogs    ContactLog[]
+  interviews     Interview[]
+  reminders      Reminder[]
+  jobFetches     JobFetch[]
+  aiSettings     AiSettings?
+  aiCalls        AiCall[]
+  agentRuns      AgentRun[]
+  agentSteps     AgentStep[]
+  dataJobs       DataJob[]
+  demoMails      DemoMail[]
+
+  @@index([isDemo, demoExpiresAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String    @db.Uuid
+  familyId  String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  rotatedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+model AuthCode {
+  id         String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String      @db.Uuid
+  purpose    CodePurpose
+  codeHash   String
+  attempts   Int         @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@index([codeHash])
+}
+
+// ---------- CV builder ----------
+
+/// Contact details and the default headline and summary. One per user.
+model Profile {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @unique @db.Uuid
+  fullName  String   @default("")
+  email     String?
+  phone     String?
+  location  String?
+  headline  String?
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// An experience, project, skill group, education, certification or link. `data` is validated per kind in packages/shared.
+model ProfileItem {
+  id        String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String          @db.Uuid
+  kind      ProfileKind
+  data      Json
+  sortOrder Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bullets   ProfileBullet[]
+
+  @@index([userId, kind, sortOrder])
+}
+
+model ProfileBullet {
+  id        String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String      @db.Uuid
+  itemId    String      @db.Uuid
+  text      String
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item      ProfileItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([itemId, sortOrder])
+}
+
+/// A CV version picks and orders profile items and bullets (`selection`), with its own headline and summary.
+model CvVersion {
+  id           String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId       String        @db.Uuid
+  name         String
+  headline     String?
+  summary      String?
+  template     CvTemplate    @default(CLASSIC)
+  selection    Json
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([userId])
+}
+
+// ---------- Companies and the sponsor register ----------
+
+model Company {
+  id             String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId         String        @db.Uuid
+  name           String
+  normalizedName String
+  website        String?
+  notes          String?
+  /// Set when the user confirms a "possible match" on the register; otherwise matched by normalised name.
+  sponsorName    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications   Application[]
+  contacts       Contact[]
+
+  @@unique([userId, normalizedName])
+  @@index([userId])
+  @@index([normalizedName])
+}
+
+/// One row per organisation and route on the Home Office register (shared, read-only data, no user).
+model Sponsor {
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name           String
+  normalizedName String
+  town           String?
+  county         String?
+  rating         String?
+  route          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([normalizedName])
+}
+
+model SponsorImport {
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  sourceUrl   String
+  publishedAt DateTime?
+  rowCount    Int       @default(0)
+  status      JobStatus @default(PENDING)
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, createdAt])
+}
+
+// ---------- Applications ----------
+
+/// A saved job and the application for it are one record: a saved job is an application in the SAVED stage.
+model Application {
+  id               String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId           String     @db.Uuid
+  companyId        String     @db.Uuid
+  title            String
+  normalizedTitle  String
+  url              String?
+  location         String?
+  workMode         WorkMode?
+  salaryMinPence   Int?
+  salaryMaxPence   Int?
+  currency         String     @default("GBP")
+  closingDate      DateTime?  @db.Date
+  description      String?
+  notes            String?
+  source           JobSource  @default(MANUAL)
+  stage            Stage      @default(SAVED)
+  stageChangedAt   DateTime   @default(now())
+  /// Order of the card inside its board column.
+  position         Int        @default(0)
+  channel          Channel?
+  appliedAt        DateTime?
+  firstReplyAt     DateTime?
+  archivedAt       DateTime?
+  cvVersionId      String?    @db.Uuid
+  cvSnapshotId     String?    @unique @db.Uuid
+  letterSnapshotId String?    @unique @db.Uuid
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company          Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  cvVersion        CvVersion? @relation(fields: [cvVersionId], references: [id], onDelete: SetNull)
+  cvSnapshot       Snapshot?  @relation("CvSnapshot", fields: [cvSnapshotId], references: [id], onDelete: Restrict)
+  letterSnapshot   Snapshot?  @relation("LetterSnapshot", fields: [letterSnapshotId], references: [id], onDelete: Restrict)
+
+  stageEvents  StageEvent[]
+  snapshots    Snapshot[]          @relation("ApplicationSnapshots")
+  drafts       Draft[]
+  contacts     ApplicationContact[]
+  contactLogs  ContactLog[]
+  interviews   Interview[]
+  reminders    Reminder[]
+  agentRuns    AgentRun[]
+
+  @@index([userId, stage, position])
+  @@index([userId, archivedAt])
+  @@index([userId, normalizedTitle])
+  @@index([companyId])
+  @@index([cvVersionId])
+}
+
+model StageEvent {
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String      @db.Uuid
+  applicationId String      @db.Uuid
+  from          Stage?
+  to            Stage
+  at            DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, at])
+  @@index([applicationId, at])
+}
+
+/// Exactly what was sent. There is no update path for snapshots anywhere in the API.
+model Snapshot {
+  id            String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String       @db.Uuid
+  applicationId String       @db.Uuid
+  kind          SnapshotKind
+  label         String
+  content       Json
+  fileId        String?      @unique @db.Uuid
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application  @relation("ApplicationSnapshots", fields: [applicationId], references: [id], onDelete: Cascade)
+  file          StoredFile?  @relation(fields: [fileId], references: [id], onDelete: Restrict)
+  cvFor         Application? @relation("CvSnapshot")
+  letterFor     Application? @relation("LetterSnapshot")
+
+  @@index([userId])
+  @@index([applicationId])
+}
+
+/// Files live under STORAGE_DIR with random names and are served only through the owner-checked API route.
+model StoredFile {
+  id        String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String    @db.Uuid
+  kind      FileKind
+  path      String    @unique
+  name      String
+  mime      String
+  size      Int
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshot  Snapshot?
+  dataJobs  DataJob[]
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model LetterTemplate {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @db.Uuid
+  name      String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// The working cover letter and message drafts for an application (one of each kind).
+model Draft {
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String      @db.Uuid
+  applicationId String      @db.Uuid
+  kind          DraftKind
+  body          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, kind])
+  @@index([userId])
+}
+
+// ---------- Contacts and interviews ----------
+
+model Contact {
+  id           String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId       String               @db.Uuid
+  companyId    String?              @db.Uuid
+  type         ContactType
+  name         String
+  role         String?
+  email        String?
+  linkedinUrl  String?
+  notes        String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company      Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  applications ApplicationContact[]
+  logs         ContactLog[]
+
+  @@index([userId, name])
+  @@index([companyId])
+}
+
+model ApplicationContact {
+  applicationId String      @db.Uuid
+  contactId     String      @db.Uuid
+  userId        String      @db.Uuid
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  contact       Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([applicationId, contactId])
+  @@index([contactId])
+  @@index([userId])
+}
+
+model ContactLog {
+  id            String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String       @db.Uuid
+  contactId     String       @db.Uuid
+  applicationId String?      @db.Uuid
+  direction     LogDirection
+  channel       LogChannel
+  at            DateTime
+  note          String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact       Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, at])
+  @@index([contactId, at])
+  @@index([applicationId])
+}
+
+/// Interviews and take-home tasks (type TAKE_HOME uses dueAt instead of startsAt).
+model Interview {
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String      @db.Uuid
+  applicationId String      @db.Uuid
+  type          InterviewType
+  startsAt      DateTime?
+  dueAt         DateTime?
+  durationMins  Int?
+  interviewers  String?
+  location      String?
+  prepNotes     String?
+  reflections   String?
+  completedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reminders     Reminder[]
+
+  @@index([userId, startsAt])
+  @@index([userId, dueAt])
+  @@index([applicationId])
+}
+
+/// A reminder fires once: dedupeKey is unique and the worker claims a due row by stamping sentAt.
+model Reminder {
+  id            String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String       @db.Uuid
+  applicationId String?      @db.Uuid
+  interviewId   String?      @db.Uuid
+  kind          ReminderKind
+  title         String
+  dueAt         DateTime
+  dedupeKey     String       @unique
+  sentAt        DateTime?
+  emailedAt     DateTime?
+  dismissedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interview     Interview?   @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueAt])
+  @@index([dueAt, sentAt])
+  @@index([applicationId])
+  @@index([interviewId])
+}
+
+// ---------- Job page fetching ----------
+
+model JobFetch {
+  id        String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String    @db.Uuid
+  url       String
+  status    JobStatus @default(PENDING)
+  result    Json?
+  error     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ---------- AI and the agent ----------
+
+/// Bring your own key. The key is AES-256-GCM encrypted and never leaves the server; only the last 4 characters are shown.
+model AiSettings {
+  id           String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId       String     @unique @db.Uuid
+  provider     AiProvider @default(GEMINI)
+  model        String?
+  baseUrl      String?
+  keyCipher    String?
+  keyLast4     String?
+  monthlyLimit Int?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Usage only: never prompts or outputs.
+model AiCall {
+  id        String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String     @db.Uuid
+  purpose   String
+  provider  AiProvider
+  model     String
+  tokensIn  Int        @default(0)
+  tokensOut Int        @default(0)
+  ok        Boolean
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model AgentRun {
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String      @db.Uuid
+  applicationId String      @db.Uuid
+  status        RunStatus   @default(QUEUED)
+  promptVersion String
+  /// A recorded run replayed in the demo.
+  replay        Boolean     @default(false)
+  error         String?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  savedAt       DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  steps         AgentStep[]
+
+  @@index([userId, createdAt])
+  @@index([applicationId, createdAt])
+}
+
+model AgentStep {
+  id         String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String     @db.Uuid
+  runId      String     @db.Uuid
+  index      Int
+  name       String
+  status     StepStatus @default(PENDING)
+  input      Json?
+  output     Json?
+  error      String?
+  tokensIn   Int        @default(0)
+  tokensOut  Int        @default(0)
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  run        AgentRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, index])
+  @@index([userId])
+}
+
+// ---------- Import, export, demo ----------
+
+model DataJob {
+  id        String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String      @db.Uuid
+  kind      DataJobKind
+  status    JobStatus   @default(PENDING)
+  fileId    String?     @db.Uuid
+  input     Json?
+  result    Json?
+  error     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  file      StoredFile? @relation(fields: [fileId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([fileId])
+}
+
+/// Demo mode only: emails are stored for the demo mail viewer and never sent.
+model DemoMail {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @db.Uuid
+  to        String
+  subject   String
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}

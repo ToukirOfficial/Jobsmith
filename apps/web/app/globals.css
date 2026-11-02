@@ -1,0 +1,252 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Jobsmith design tokens, defined once. Forge indigo is the one confident accent; ember appears only in
+ * the logo and small highlights; deep ink text on a soft cool canvas. Each stage has its own colour, and
+ * status colours always come with a word, never alone. Light only.
+ */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans.woff2') format('woff2');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  --radius: 0.625rem;
+
+  /* Core palette */
+  --brand: #3346d3;
+  --brand-hover: #2837b0;
+  --brand-tint: #e9ecfd;
+  --spark: #e2702e;
+  --spark-tint: #fdeee3;
+  --ink: #161a2b;
+  --ink-soft: #565d76;
+  --canvas: #f5f6f9;
+  --canvas-deep: #eceef4;
+  --paper: #ffffff;
+  --line: #e0e3eb;
+  --line-strong: #c8cddc;
+
+  /* Status: text / tint pairs, each at least 4.5:1 */
+  --ok: #17694a;
+  --ok-tint: #e0f3ea;
+  --warn: #8a5300;
+  --warn-tint: #fcf1d9;
+  --bad: #b02a2a;
+  --bad-tint: #fce6e4;
+  --none: #4f5570;
+  --none-tint: #eceef3;
+  --info: #23589b;
+  --info-tint: #e4eefa;
+
+  /* Stages: text / tint pairs */
+  --stage-saved: #4f5570;
+  --stage-saved-tint: #eceef3;
+  --stage-applied: #3346d3;
+  --stage-applied-tint: #e9ecfd;
+  --stage-screening: #0f6b74;
+  --stage-screening-tint: #dff2f3;
+  --stage-interview: #6b3fb8;
+  --stage-interview-tint: #efe7fb;
+  --stage-offer: #17694a;
+  --stage-offer-tint: #e0f3ea;
+  --stage-rejected: #b02a2a;
+  --stage-rejected-tint: #fce6e4;
+  --stage-withdrawn: #6a6f80;
+  --stage-withdrawn-tint: #f0f1f4;
+
+  /* shadcn/ui variables mapped onto the palette */
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--canvas-deep);
+  --secondary-foreground: var(--ink);
+  --muted: var(--canvas);
+  --muted-foreground: var(--ink-soft);
+  --accent: var(--canvas-deep);
+  --accent-foreground: var(--ink);
+  --destructive: var(--bad);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--brand);
+}
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--brand-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-brand-tint: var(--brand-tint);
+  --color-spark: var(--spark);
+  --color-spark-tint: var(--spark-tint);
+  --color-ink: var(--ink);
+  --color-canvas: var(--canvas);
+  --color-canvas-deep: var(--canvas-deep);
+  --color-paper: var(--paper);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ok: var(--ok);
+  --color-ok-tint: var(--ok-tint);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --color-bad: var(--bad);
+  --color-bad-tint: var(--bad-tint);
+  --color-none: var(--none);
+  --color-none-tint: var(--none-tint);
+  --color-info: var(--info);
+  --color-info-tint: var(--info-tint);
+  --color-stage-saved: var(--stage-saved);
+  --color-stage-saved-tint: var(--stage-saved-tint);
+  --color-stage-applied: var(--stage-applied);
+  --color-stage-applied-tint: var(--stage-applied-tint);
+  --color-stage-screening: var(--stage-screening);
+  --color-stage-screening-tint: var(--stage-screening-tint);
+  --color-stage-interview: var(--stage-interview);
+  --color-stage-interview-tint: var(--stage-interview-tint);
+  --color-stage-offer: var(--stage-offer);
+  --color-stage-offer-tint: var(--stage-offer-tint);
+  --color-stage-rejected: var(--stage-rejected);
+  --color-stage-rejected-tint: var(--stage-rejected-tint);
+  --color-stage-withdrawn: var(--stage-withdrawn);
+  --color-stage-withdrawn-tint: var(--stage-withdrawn-tint);
+  --color-ink-soft: var(--ink-soft);
+
+  /* Radius by role: 6px controls, 10px panels; badges are pills. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  /* Type scale (1.2 minor third from 15px body) */
+  --text-hero: 3.5rem;
+  --text-hero--line-height: 1.04;
+  --text-display: 2.75rem;
+  --text-display--line-height: 1.08;
+  --text-title: 1.625rem;
+  --text-title--line-height: 1.2;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-size: 15px;
+    font-feature-settings: 'kern', 'ss01';
+    line-height: 1.55;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--brand) 45%, transparent);
+    outline-offset: 2px;
+  }
+  .tabular,
+  td,
+  [data-money] {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Tables on phones: each row is a card, the first cell its title, the rest labelled (see ui/table.tsx). */
+@media (max-width: 639px) {
+  table[data-stack] thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  table[data-stack],
+  table[data-stack] tbody {
+    display: block;
+  }
+  table[data-stack] tbody tr {
+    display: grid;
+    gap: 0.375rem;
+    padding: 0.875rem 1rem;
+  }
+  table[data-stack] tbody td {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 34%) minmax(0, 1fr);
+    column-gap: 0.75rem;
+    align-items: baseline;
+    justify-items: start;
+    padding: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  table[data-stack] tbody td::before {
+    content: attr(data-label);
+    grid-column: 1;
+    grid-row: 1 / span 12;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+  table[data-stack] tbody td:first-child,
+  table[data-stack] tbody td[data-label=''] {
+    display: block;
+  }
+  table[data-stack] tbody td:first-child::before,
+  table[data-stack] tbody td[data-label='']::before {
+    content: none;
+  }
+  table[data-stack] tbody td:empty,
+  table[data-stack] tbody td[data-blank] {
+    display: none;
+  }
+  table[data-stack] tbody td[colspan] {
+    display: block;
+  }
+  table[data-stack] tbody td[colspan]::before {
+    content: none;
+  }
+}
