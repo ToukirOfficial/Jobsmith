@@ -30,6 +30,8 @@ jobs:
       JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
     steps:
       - uses: actions/checkout@v4
+      - name: Secret and IP scan
+        run: bash scripts/test-scan-secrets.sh && bash scripts/scan-secrets.sh --all
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -41,3 +43,37 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm audit --audit-level high
+
+  docker:
+    # Builds the images and runs the whole self-hosting stack the way the README tells people to.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make a .env like a self-hoster would
+        run: |
+          cp .env.example .env
+          sed -i "s#^JWT_SECRET=.*#JWT_SECRET=$(openssl rand -base64 48 | tr -d '\n')#" .env
+          sed -i "s#^ENCRYPTION_KEY=.*#ENCRYPTION_KEY=$(openssl rand -base64 32 | tr -d '\n')#" .env
+          sed -i "s#^POSTGRES_PASSWORD=.*#POSTGRES_PASSWORD=$(openssl rand -hex 16)#" .env
+      - name: Build the images
+        run: docker compose build
+      - name: Start the stack
+        run: docker compose up -d
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8035/api/v1/health >/dev/null 2>&1; then break; fi
+            sleep 3
+          done
+          echo "API through the web proxy:"; curl -fsS http://localhost:8035/api/v1/health; echo
+          echo "API directly:"; docker compose exec -T api node -e "fetch('http://127.0.0.1:8135/api/v1/health').then(r=>r.text()).then(t=>{console.log(t);process.exit(t.includes('true')?0:1)})"
+          echo "First-run setup is open:"; curl -fsS http://localhost:8035/api/v1/setup | grep -q '"setupNeeded":true'
+          echo "Web pages:"; for p in / /login /setup; do curl -fsS -o /dev/null -w "%{http_code} $p\n" http://localhost:8035$p; done
+          echo "Worker is running:"; docker compose ps worker --format '{{.State}}' | grep -q running
+          docker compose logs worker | grep -q "worker running"
+      - name: Logs on failure
+        if: failure()
+        run: docker compose ps && docker compose logs --tail=150
+      - name: Stop
+        if: always()
+        run: docker compose down -v

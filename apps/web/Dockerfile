@@ -1,6 +1,7 @@
 # Jobsmith web (Next.js, standalone output). Build from the repository root:
 #   docker build -f apps/web/Dockerfile -t jobsmith-web .
 FROM node:24-bookworm-slim AS build
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 WORKDIR /app
 COPY . .

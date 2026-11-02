@@ -82,6 +82,8 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email: input.email } });
     const ok = user ? await verifyPassword(user.passwordHash, input.password) : (await verifyPassword(await dummyHash(), input.password), false);
     if (!user || !ok) throw invalidLogin();
+    // Demo accounts have public passwords: they only exist for the public demo.
+    if (user.isDemo && !config().DEMO_MODE) throw invalidLogin();
     if (user.isDemo || !loginCodesOn()) {
       await this.sessions.start(user.id, meta.res);
       return { status: 'ok' };

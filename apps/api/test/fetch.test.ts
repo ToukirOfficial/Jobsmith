@@ -13,7 +13,8 @@ describe('SSRF protection', () => {
     for (const ip of ['127.0.0.1', '10.1.2.3', '172.16.0.9', '192.168.1.1', '169.254.169.254', '100.64.0.1', '0.0.0.0', '224.0.0.1', '::1', '::', 'fe80::1', 'fd00:ec2::254', '::ffff:127.0.0.1', '::ffff:7f00:1', '::ffff:169.254.169.254', '64:ff9b::a00:1']) {
       expect(isPublicAddress(ip), ip).toBe(false);
     }
-    for (const ip of ['93.184.215.14', '151.101.0.81', '2606:4700::6810:84e5']) expect(isPublicAddress(ip), ip).toBe(true);
+    // Well-known public addresses (example.com, a CDN), used only to check they are allowed.
+    for (const ip of ['93.184.215.14', '151.101.0.81', '2606:4700::6810:84e5']) expect(isPublicAddress(ip), ip).toBe(true); // scan-secrets: allow
   });
 
   it('refuses non-http schemes, credentials, odd ports and LinkedIn/Indeed', () => {
@@ -30,7 +31,7 @@ describe('SSRF protection', () => {
     await expect(
       safeFetch('http://mixed.example/', {
         resolve: async () => [
-          { address: '93.184.215.14', family: 4 },
+          { address: '93.184.215.14', family: 4 }, // scan-secrets: allow
           { address: '127.0.0.1', family: 4 },
         ],
       }),

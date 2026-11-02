@@ -13,7 +13,7 @@
     "test": "prisma generate && vitest run",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "node --env-file-if-exists=../../.env dist/seed.js",
+    "db:seed": "node --env-file-if-exists=../../.env dist/seed.js --dev",
     "db:reset": "prisma migrate reset --force && pnpm build && pnpm db:seed",
     "evals": "node --env-file-if-exists=../../.env dist/evals.js"
   },

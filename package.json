@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "node --env-file-if-exists=.env node_modules/turbo/bin/turbo run dev",
     "build": "turbo run build",
@@ -15,7 +17,9 @@
     "db:seed": "pnpm --filter @jobsmith/api db:seed",
     "db:reset": "pnpm --filter @jobsmith/api db:reset",
     "worker": "pnpm --filter @jobsmith/api worker",
-    "evals": "pnpm --filter @jobsmith/api evals"
+    "evals": "pnpm --filter @jobsmith/api evals",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "scan": "bash scripts/scan-secrets.sh --all"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
