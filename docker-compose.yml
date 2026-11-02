@@ -1,0 +1,82 @@
+# Self-hosting: web, API, worker, PostgreSQL and Redis.
+#   cp .env.example .env    (fill in JWT_SECRET and ENCRYPTION_KEY, and POSTGRES_PASSWORD below)
+#   docker compose up -d
+# Then open http://localhost:8035 (or your domain behind a reverse proxy) and create your account.
+name: jobsmith
+
+x-app-env: &app-env
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql://jobsmith:${POSTGRES_PASSWORD:-change-me}@postgres:5432/jobsmith
+    REDIS_URL: redis://redis:6379/0
+    API_HOST: 0.0.0.0
+    API_PORT: '8135'
+    STORAGE_DIR: /data/storage
+    TRUST_PROXY: loopback, uniquelocal
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jobsmith
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: jobsmith
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jobsmith -d jobsmith']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    image: jobsmith-api
+    restart: unless-stopped
+    <<: *app-env
+    volumes:
+      - storage:/data/storage
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  worker:
+    image: jobsmith-api
+    restart: unless-stopped
+    <<: *app-env
+    command: ['node', 'dist/worker.js']
+    volumes:
+      - storage:/data/storage
+    depends_on:
+      api: { condition: service_started }
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_INTERNAL_URL: http://api:8135
+    image: jobsmith-web
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-8035}:8035'
+    depends_on:
+      api: { condition: service_started }
+
+volumes:
+  postgres:
+  redis:
+  storage:

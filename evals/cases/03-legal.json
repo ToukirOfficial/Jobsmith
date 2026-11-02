@@ -1,0 +1,9 @@
+{
+  "id": "legal-tech-documents",
+  "title": "Software Engineer, Documents",
+  "company": "Quillmark Legal",
+  "hiringManager": "Hannah Okafor",
+  "mustHave": ["TypeScript", "PDF"],
+  "forbidden": ["law degree", "solicitor", "10 years"],
+  "jobText": "Quillmark Legal makes contract tools for small law firms.\n\nYou will\n- Build document generation (PDF and DOCX)\n- Improve search across contracts\n\nYou have\n- TypeScript and React\n- Experience generating PDFs\n- Care for accessibility\n\nDesirable\n- Elasticsearch\n\n£50k. London, hybrid."
+}

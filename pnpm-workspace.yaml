@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+onlyBuiltDependencies:
+  - argon2
+  - prisma
+  - '@prisma/engines'
+  - sharp
+  - unrs-resolver
+overrides:
+  minimatch@<11.0.1: '>=11.0.1'

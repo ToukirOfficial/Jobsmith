@@ -1,0 +1,9 @@
+{
+  "id": "backend-plain",
+  "title": "Backend Engineer",
+  "company": "Lattice Works",
+  "hiringManager": "Sam Ortiz",
+  "mustHave": ["Node.js", "PostgreSQL"],
+  "forbidden": ["Google", "Amazon", "Kubernetes expert"],
+  "jobText": "Lattice Works builds scheduling software for clinics.\n\nWhat you'll do\n- Build APIs in Node.js and TypeScript\n- Own our PostgreSQL schema and queries\n- Run background jobs with queues\n\nWhat we're looking for\n- 2+ years with Node.js\n- Strong PostgreSQL\n- Experience with job queues\n\nNice to have\n- Kubernetes\n- GraphQL\n\nSalary £48,000–£55,000. Hybrid, Leeds. Closing date 30 November 2026."
+}

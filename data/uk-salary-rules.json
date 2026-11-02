@@ -1,0 +1,26 @@
+{
+  "name": "UK Skilled Worker salary thresholds (guide only)",
+  "version": "2025-07-22",
+  "checkedOn": "2026-11-02",
+  "notes": "General threshold and new-entrant floor only. The job must ALSO meet the going rate for its occupation code, which Jobsmith does not check. Always confirm on GOV.UK.",
+  "rules": [
+    {
+      "effectiveFrom": "2024-04-04",
+      "generalThresholdPence": 3870000,
+      "newEntrantThresholdPence": 3096000,
+      "sources": [
+        { "label": "Immigration Rules: statements of changes (HC 590, March 2024)", "url": "https://www.gov.uk/government/collections/immigration-rules-statement-of-changes" }
+      ]
+    },
+    {
+      "effectiveFrom": "2025-07-22",
+      "generalThresholdPence": 4170000,
+      "newEntrantThresholdPence": 3340000,
+      "sources": [
+        { "label": "Skilled Worker visa: your job", "url": "https://www.gov.uk/skilled-worker-visa/your-job" },
+        { "label": "Skilled Worker visa: when you can be paid less", "url": "https://www.gov.uk/skilled-worker-visa/when-you-can-be-paid-less" },
+        { "label": "Immigration Rules: statements of changes (HC 997, July 2025)", "url": "https://www.gov.uk/government/collections/immigration-rules-statement-of-changes" }
+      ]
+    }
+  ]
+}

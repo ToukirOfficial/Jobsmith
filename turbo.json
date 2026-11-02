@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["API_INTERNAL_URL", "NODE_ENV", "DEMO_MODE"],
+  "globalPassThroughEnv": ["WEB_PORT"],
+  "tasks": {
+    "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**", "!.next/cache/**"] },
+    "typecheck": { "dependsOn": ["^build"] },
+    "lint": { "dependsOn": ["^build"] },
+    "test": { "dependsOn": ["^build"], "cache": false },
+    "dev": { "dependsOn": ["^build"], "cache": false, "persistent": true }
+  }
+}

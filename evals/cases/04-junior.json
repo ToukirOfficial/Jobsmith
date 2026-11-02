@@ -1,0 +1,9 @@
+{
+  "id": "graduate-thin-advert",
+  "title": "Graduate Software Developer",
+  "company": "Tidewater Logistics",
+  "hiringManager": null,
+  "mustHave": [],
+  "forbidden": ["C# expert", ".NET experience"],
+  "jobText": "Graduate Software Developer. Southampton. Join our small team. Training provided. Some programming experience in any language. C# a plus."
+}
