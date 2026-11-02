@@ -3,6 +3,7 @@
 # Built on this machine from a clean clone of HEAD, never on the server. Works on macOS and Linux/WSL.
 #   ./deploy.sh          build HEAD, upload release local-<sha>, dump + migrate if needed, switch, check
 #   ./deploy.sh --check  show uncommitted files, pending migrations and the live release; changes nothing
+#   ./deploy.sh --seed   also run the seed on the server after switching (allowed only when DEMO_MODE=true there)
 #
 # Nothing about the server is committed: every value comes from ./deploy.env (gitignored; copy
 # deploy.env.example). Before the first deploy, create on the server:
@@ -22,10 +23,11 @@ for v in HOST SITE_USER APP_DIR BACKUPS_DIR DB_NAME URL WEB_PORT API_PORT PM2_PR
 done
 API_INTERNAL="http://127.0.0.1:$API_PORT"
 
-MODE=deploy
+MODE=deploy; SEED=0
 for a in "$@"; do
   case "$a" in
     --check) MODE=check ;;
+    --seed) SEED=1 ;;
     *) echo "Unknown option: $a" >&2; exit 1 ;;
   esac
 done
@@ -121,9 +123,14 @@ if [[ "$RUN" != "$LIVE_RUN" ]]; then
   pm2_start
 fi
 
+if [[ $SEED -eq 1 ]]; then
+  echo "== Seeding the demo account =="
+  as_site "cd $APP_DIR/current/apps/api && node --env-file=.env dist/seed.js"
+fi
+
 sleep 6
-web=$(curl -s -o /dev/null -w '%{http_code}' "$URL"); api=$(curl -s -o /dev/null -w '%{http_code}' "$URL/api/v1/health")
-echo "$URL -> $web, /api/v1/health -> $api"
+web=$(curl -s -o /dev/null -w '%{http_code}' "$URL"); api=$(curl -s -o /dev/null -w '%{http_code}' "$URL/api/health")
+echo "$URL -> $web, /api/health -> $api"
 if [[ "$web" != 200 || "$api" != 200 ]]; then
   if [[ -n "$PREV_RUN" && "$PREV_RUN" != "$RUN" ]]; then
     echo "Check failed: switching back to $PREV_RUN" >&2
@@ -132,5 +139,5 @@ if [[ "$web" != 200 || "$api" != 200 ]]; then
   fi
   exit 1
 fi
-# Only the live release is kept (no old code backups).
-ssh "$HOST" "cd $APP_DIR/releases && ls -1 | grep -vx '$RUN' | xargs -r rm -rf"
+# Keep the live release and the one before it (for a quick switch back).
+ssh "$HOST" "cd $APP_DIR/releases && ls -1t | grep -vx '$RUN' | tail -n +2 | xargs -r rm -rf"
