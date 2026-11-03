@@ -3,6 +3,7 @@ import { Readable } from 'node:stream';
 import { parse } from 'csv-parse';
 import { normaliseCompany } from '@jobsmith/shared';
 import { config } from '../config.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma.service.js';
 import { SponsorLookupService } from './sponsor-lookup.service.js';
 
@@ -95,6 +96,19 @@ export async function readRegister(input: Readable): Promise<RegisterRow[]> {
   return rows;
 }
 
+/**
+ * One fixed INSERT per batch, with each column passed as an array. Prisma's createMany builds a new
+ * query for every batch and its memory grew by about 6 MB per 1,000 rows (over 1 GB for the full
+ * register); this stays flat.
+ */
+async function insertBatch(tx: Prisma.TransactionClient, rows: RegisterRow[]) {
+  const col = <K extends keyof RegisterRow>(k: K) => rows.map((r) => r[k]);
+  await tx.$executeRaw`
+    INSERT INTO "Sponsor" ("name", "normalizedName", "town", "county", "rating", "route", "updatedAt")
+    SELECT n, nn, t, c, r, ro, now()
+    FROM unnest(${col('name')}::text[], ${col('normalizedName')}::text[], ${col('town')}::text[], ${col('county')}::text[], ${col('rating')}::text[], ${col('route')}::text[]) AS x(n, nn, t, c, r, ro)`;
+}
+
 @Injectable()
 export class SponsorRegisterService {
   private readonly logger = new Logger('SponsorRegister');
@@ -130,7 +144,7 @@ export class SponsorRegisterService {
           await tx.sponsor.deleteMany({});
           let count = 0;
           for await (const batch of readRegisterBatches(body)) {
-            await tx.sponsor.createMany({ data: batch });
+            await insertBatch(tx, batch);
             count += batch.length;
           }
           if (count < SponsorRegisterService.minRows) throw new RegisterError(`The register has only ${count} rows, so it was not loaded.`);
