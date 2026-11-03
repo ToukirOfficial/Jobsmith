@@ -43,7 +43,7 @@ export class PdfJobsService {
 
   private async enqueue(userId: string, input: PdfInput) {
     const job = await this.prisma.dataJob.create({ data: { userId, kind: 'PDF', input: input as unknown as Prisma.InputJsonValue } });
-    await this.queue.add('work', 'pdf', { id: job.id });
+    await this.queue.add('pdf', 'pdf', { id: job.id });
     return this.toDto(job);
   }
 

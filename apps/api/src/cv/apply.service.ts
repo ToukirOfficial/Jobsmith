@@ -61,7 +61,7 @@ export class ApplyService {
       await tx.application.update({ where: { id }, data });
       await this.reminders.planForApplication(tx, id);
     });
-    for (const sid of snapshotIds) await this.queue.add('work', 'snapshot-pdf', { id: sid });
+    for (const sid of snapshotIds) await this.queue.add('pdf', 'snapshot-pdf', { id: sid });
     await this.redis.invalidate(userId);
     return this.apps.get(userId, id);
   }

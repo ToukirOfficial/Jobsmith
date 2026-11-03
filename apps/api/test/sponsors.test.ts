@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { Readable } from 'node:stream';
+import { PassThrough, Readable } from 'node:stream';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { SponsorRegisterService, locateCsv, readRegister } from '../src/sponsors/sponsor-register.service.js';
+import { REGISTER_BATCH_SIZE, SponsorRegisterService, locateCsv, readRegister, readRegisterBatches } from '../src/sponsors/sponsor-register.service.js';
 import { as, createUser, startApp, type Client, type TestContext } from './helpers.js';
 
 const csv = readFileSync(new URL('./fixtures/register.csv', import.meta.url), 'utf8');
@@ -44,6 +44,33 @@ describe('register parsing', () => {
 
   it('stops with a clear message when a column is missing', async () => {
     await expect(readRegister(Readable.from(['Organisation Name,Town/City,Route\nA,B,C\n']))).rejects.toThrow(/Missing: County, Type & Rating/);
+  });
+});
+
+describe('register batching', () => {
+  // A large fake register built by repeating the fixture's rows (no real data).
+  const [header, ...lines] = csv.split(/\r?\n/).filter(Boolean);
+  const fake = (rows: number) => [header, ...Array.from({ length: rows }, (_, i) => lines[i % lines.length])].join('\n') + '\n';
+
+  it('yields the register in batches of 1,000 rows', async () => {
+    expect(REGISTER_BATCH_SIZE).toBe(1000);
+    const sizes: number[] = [];
+    for await (const batch of readRegisterBatches(Readable.from([fake(2500)]))) sizes.push(batch.length);
+    expect(sizes).toEqual([1000, 1000, 500]);
+  });
+
+  it('hands over each batch before the rest of the file has arrived', async () => {
+    const download = new PassThrough();
+    const batches = readRegisterBatches(download)[Symbol.asyncIterator]();
+    // 1,000 rows plus the start of the next one, as a download would arrive.
+    const next = `${lines[0]}\n`;
+    download.write(fake(1000) + next.slice(0, 10));
+    const first = await batches.next();
+    expect(first.value).toHaveLength(1000);
+    expect(download.writableEnded).toBe(false);
+    download.end(next.slice(10));
+    expect((await batches.next()).value).toHaveLength(1);
+    expect((await batches.next()).done).toBe(true);
   });
 });
 

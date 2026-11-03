@@ -96,23 +96,25 @@ export async function seedProfile(tx: Prisma.TransactionClient, userId: string):
   return ids;
 }
 
-/** Applied jobs get the frozen CV they were "sent", with a real PDF rendered once per version. */
+/**
+ * Applied jobs get the frozen CV they were "sent", with a real PDF rendered once per version. PDFs are
+ * rendered one at a time and each is released before the next, so the seed never holds more than one.
+ */
 export async function seedSnapshots(prisma: PrismaService, userId: string, profile: ProfileDto) {
   const files = new FilesService(prisma);
-  const apps = await prisma.application.findMany({ where: { userId, cvVersionId: { not: null }, cvSnapshotId: null }, include: { cvVersion: true } });
-  const rendered = new Map<string, { doc: ReturnType<typeof buildCvDocument>; pdf: Buffer; template: string; name: string }>();
-  for (const app of apps) {
-    const v = toVersionDto(app.cvVersion!);
-    let r = rendered.get(v.id);
-    if (!r) {
-      const doc = buildCvDocument(profile, v);
-      r = { doc, pdf: await renderCvBuffer(doc, v.template), template: v.template, name: v.name };
-      rendered.set(v.id, r);
+  const apps = await prisma.application.findMany({ where: { userId, cvVersionId: { not: null }, cvSnapshotId: null }, include: { cvVersion: true }, orderBy: { createdAt: 'asc' } });
+  const byVersion = new Map<string, typeof apps>();
+  for (const app of apps) byVersion.set(app.cvVersionId!, [...(byVersion.get(app.cvVersionId!) ?? []), app]);
+  for (const group of byVersion.values()) {
+    const v = toVersionDto(group[0]!.cvVersion!);
+    const doc = buildCvDocument(profile, v);
+    const pdf = await renderCvBuffer(doc, v.template);
+    for (const app of group) {
+      const file = await files.save(userId, 'CV_PDF', `Alex-Morgan-CV-${v.name.replace(/\W+/g, '-')}.pdf`, 'application/pdf', pdf);
+      const snap = await prisma.snapshot.create({
+        data: { userId, applicationId: app.id, kind: 'CV', label: `CV: ${v.name}`, content: { doc, template: v.template, versionName: v.name } as unknown as Prisma.InputJsonValue, fileId: file.id, createdAt: app.appliedAt ?? app.createdAt },
+      });
+      await prisma.application.update({ where: { id: app.id }, data: { cvSnapshotId: snap.id } });
     }
-    const file = await files.save(userId, 'CV_PDF', `Alex-Morgan-CV-${v.name.replace(/\W+/g, '-')}.pdf`, 'application/pdf', r.pdf);
-    const snap = await prisma.snapshot.create({
-      data: { userId, applicationId: app.id, kind: 'CV', label: `CV: ${v.name}`, content: { doc: r.doc, template: r.template, versionName: r.name } as unknown as Prisma.InputJsonValue, fileId: file.id, createdAt: app.appliedAt ?? app.createdAt },
-    });
-    await prisma.application.update({ where: { id: app.id }, data: { cvSnapshotId: snap.id } });
   }
 }

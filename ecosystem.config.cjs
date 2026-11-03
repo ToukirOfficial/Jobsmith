@@ -11,7 +11,7 @@ const need = (k) => {
   return v;
 };
 const prefix = need('PM2_PREFIX');
-// Memory caps (MB): small on purpose; this shares a server with other sites, which come first.
+// Memory caps: small on purpose, so a demo server can run several apps side by side.
 const apiEnv = path.join(__dirname, 'apps/api/.env');
 const webEnv = path.join(__dirname, 'web/.env');
 
@@ -23,15 +23,16 @@ module.exports = {
       script: 'dist/main.js',
       // Absolute path: PM2 doesn't start node inside cwd, so a relative --env-file isn't found.
       node_args: `--env-file=${apiEnv}`,
-      max_memory_restart: '250M',
+      max_memory_restart: '300M',
       env: { NODE_ENV: 'production', API_PORT: need('API_PORT'), API_HOST: '127.0.0.1' },
     },
     {
       name: `${prefix}-worker`,
       cwd: path.join(__dirname, 'apps/api'),
       script: 'dist/worker.js',
-      node_args: `--env-file=${apiEnv}`,
-      max_memory_restart: '300M',
+      // A heap limit well under the memory cap, so V8 collects garbage before PM2 would restart the worker.
+      node_args: `--env-file=${apiEnv} --max-old-space-size=160`,
+      max_memory_restart: '350M',
       env: { NODE_ENV: 'production' },
     },
     {
@@ -39,7 +40,7 @@ module.exports = {
       cwd: path.join(__dirname, 'web'),
       script: 'apps/web/server.js',
       node_args: `--env-file=${webEnv}`,
-      max_memory_restart: '250M',
+      max_memory_restart: '300M',
       env: { NODE_ENV: 'production', PORT: need('WEB_PORT'), HOSTNAME: '127.0.0.1' },
     },
   ],

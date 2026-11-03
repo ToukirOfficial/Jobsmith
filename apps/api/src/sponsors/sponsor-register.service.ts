@@ -3,6 +3,7 @@ import { Readable } from 'node:stream';
 import { parse } from 'csv-parse';
 import { normaliseCompany } from '@jobsmith/shared';
 import { config } from '../config.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma.service.js';
 import { SponsorLookupService } from './sponsor-lookup.service.js';
 
@@ -10,7 +11,8 @@ import { SponsorLookupService } from './sponsor-lookup.service.js';
  * Keeps a local copy of the Home Office "Register of licensed sponsors: workers". The approach is ported
  * from github.com/ToukirOfficial/uk-sponsors (MIT): ask the GOV.UK Content API where today's CSV is,
  * download it only from GOV.UK's asset host, stream-parse it, check the columns by name, and swap the
- * whole table in one transaction so badges never see a half-loaded register.
+ * whole table in one transaction so badges never see a half-loaded register. Rows go in 1,000 at a time
+ * straight from the download, so memory stays flat however large the file is.
  */
 export const REQUIRED_COLUMNS = { name: 'Organisation Name', town: 'Town/City', county: 'County', rating: 'Type & Rating', route: 'Route' } as const;
 const ALLOWED_ORIGINS = ['https://assets.publishing.service.gov.uk'];
@@ -47,13 +49,19 @@ export interface RegisterRow {
   route: string;
 }
 
-/** Stream-parses the register CSV. Extra columns are fine; a missing one stops the import with its name. */
-export async function readRegister(input: Readable): Promise<RegisterRow[]> {
+/** Rows per insert. The import never holds more than one batch of the register in memory. */
+export const REGISTER_BATCH_SIZE = 1000;
+
+/**
+ * Stream-parses the register CSV and yields it in batches of `batchSize` rows, so the whole file is never
+ * in memory. Extra columns are fine; a missing one stops the import with its name.
+ */
+export async function* readRegisterBatches(input: Readable, batchSize = REGISTER_BATCH_SIZE): AsyncGenerator<RegisterRow[]> {
   const parser = input.pipe(parse({ bom: true, relax_column_count: true, skip_empty_lines: true }));
   input.on('error', (e) => parser.destroy(e));
   type Cols = Record<keyof typeof REQUIRED_COLUMNS, number>;
   let cols: Cols | null = null;
-  const rows: RegisterRow[] = [];
+  let batch: RegisterRow[] = [];
   for await (const record of parser as AsyncIterable<string[]>) {
     if (!cols) {
       const pos = new Map(record.map((h, i) => [headerKey(h), i] as const));
@@ -64,7 +72,7 @@ export async function readRegister(input: Readable): Promise<RegisterRow[]> {
     }
     const name = clean(record[cols.name]);
     if (!name) continue;
-    rows.push({
+    batch.push({
       name,
       normalizedName: normaliseCompany(name),
       town: clean(record[cols.town]) || null,
@@ -72,9 +80,33 @@ export async function readRegister(input: Readable): Promise<RegisterRow[]> {
       rating: clean(record[cols.rating]) || null,
       route: clean(record[cols.route]) || 'Unknown route',
     });
+    if (batch.length >= batchSize) {
+      yield batch;
+      batch = [];
+    }
   }
   if (!cols) throw new RegisterError('The register CSV was empty.');
+  if (batch.length) yield batch;
+}
+
+/** Reads the whole register into memory. Small files and tests only: the import uses readRegisterBatches. */
+export async function readRegister(input: Readable): Promise<RegisterRow[]> {
+  const rows: RegisterRow[] = [];
+  for await (const batch of readRegisterBatches(input)) rows.push(...batch);
   return rows;
+}
+
+/**
+ * One fixed INSERT per batch, with each column passed as an array. Prisma's createMany builds a new
+ * query for every batch and its memory grew by about 6 MB per 1,000 rows (over 1 GB for the full
+ * register); this stays flat.
+ */
+async function insertBatch(tx: Prisma.TransactionClient, rows: RegisterRow[]) {
+  const col = <K extends keyof RegisterRow>(k: K) => rows.map((r) => r[k]);
+  await tx.$executeRaw`
+    INSERT INTO "Sponsor" ("name", "normalizedName", "town", "county", "rating", "route", "updatedAt")
+    SELECT n, nn, t, c, r, ro, now()
+    FROM unnest(${col('name')}::text[], ${col('normalizedName')}::text[], ${col('town')}::text[], ${col('county')}::text[], ${col('rating')}::text[], ${col('route')}::text[]) AS x(n, nn, t, c, r, ro)`;
 }
 
 @Injectable()
@@ -104,19 +136,26 @@ export class SponsorRegisterService {
       }
       const csv = await SponsorRegisterService.fetcher(source.url, { signal: AbortSignal.timeout(180_000) });
       if (!csv.ok || !csv.body) throw new RegisterError(`The register download answered ${csv.status}.`);
-      const rows = await readRegister(Readable.fromWeb(csv.body as import('node:stream/web').ReadableStream));
-      if (rows.length < SponsorRegisterService.minRows) throw new RegisterError(`The register has only ${rows.length} rows, so it was not loaded.`);
-      await this.prisma.$transaction(
+      const body = Readable.fromWeb(csv.body as import('node:stream/web').ReadableStream);
+      // Streamed straight from the download into the table, one batch at a time, inside one transaction:
+      // badges never see a half-loaded register, and a short file rolls everything back.
+      const rows = await this.prisma.$transaction(
         async (tx) => {
           await tx.sponsor.deleteMany({});
-          for (let i = 0; i < rows.length; i += 5000) await tx.sponsor.createMany({ data: rows.slice(i, i + 5000) });
-          await tx.sponsorImport.update({ where: { id: job.id }, data: { status: 'DONE', sourceUrl: source.url, publishedAt: source.publishedAt, rowCount: rows.length } });
+          let count = 0;
+          for await (const batch of readRegisterBatches(body)) {
+            await insertBatch(tx, batch);
+            count += batch.length;
+          }
+          if (count < SponsorRegisterService.minRows) throw new RegisterError(`The register has only ${count} rows, so it was not loaded.`);
+          await tx.sponsorImport.update({ where: { id: job.id }, data: { status: 'DONE', sourceUrl: source.url, publishedAt: source.publishedAt, rowCount: count } });
+          return count;
         },
-        { timeout: 300_000 },
+        { timeout: 600_000 },
       );
       await this.lookup.clearLoadedCache();
-      this.logger.log(`Sponsor register loaded: ${rows.length} rows`);
-      return { status: 'updated', rows: rows.length };
+      this.logger.log(`Sponsor register loaded: ${rows} rows`);
+      return { status: 'updated', rows };
     } catch (e) {
       const message = e instanceof RegisterError ? e.message : 'The register could not be downloaded.';
       this.logger.warn(`Sponsor register update failed: ${message}`);
