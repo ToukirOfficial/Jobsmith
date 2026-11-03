@@ -93,7 +93,7 @@ export class DemoService {
       const v = toVersionDto(app.cvVersion!);
       const snap = await tx.snapshot.create({ data: { userId, applicationId: app.id, kind: 'CV', label: `CV: ${v.name}`, content: { doc: buildCvDocument(profile, v), template: v.template, versionName: v.name } as unknown as Prisma.InputJsonValue, createdAt: app.appliedAt ?? app.createdAt } });
       await tx.application.update({ where: { id: app.id }, data: { cvSnapshotId: snap.id } });
-      await this.queue.add('work', 'snapshot-pdf', { id: snap.id });
+      await this.queue.add('pdf', 'snapshot-pdf', { id: snap.id });
     }
   }
 

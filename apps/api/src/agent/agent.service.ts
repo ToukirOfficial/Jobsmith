@@ -114,7 +114,7 @@ export class AgentService {
       data: { userId, applicationId, replay, promptVersion: PROMPT_VERSION, steps: { create: AGENT_STEPS.map((name, index) => ({ userId, index, name })) } },
       include: RUN_INCLUDE,
     });
-    await this.queue.add('work', 'agent', { id: run.id });
+    await this.queue.add('agent', 'agent', { id: run.id });
     return toDto(run);
   }
 
@@ -139,7 +139,7 @@ export class AgentService {
       this.prisma.agentStep.update({ where: { runId_index: { runId: id, index } }, data: { status: 'PENDING', error: null } }),
       this.prisma.agentRun.update({ where: { id }, data: { status: 'QUEUED', finishedAt: null } }),
     ]);
-    await this.queue.add('work', 'agent', { id });
+    await this.queue.add('agent', 'agent', { id });
     return this.get(userId, id);
   }
 

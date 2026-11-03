@@ -16,6 +16,8 @@ import { DemoService } from '../demo/demo.service.js';
 @Injectable()
 export class JobProcessors {
   private readonly logger = new Logger('Jobs');
+  /** The tail of the PDF / register-import line: each waits for the one before it to finish. */
+  private heavy: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly mail: MailService,
@@ -28,6 +30,16 @@ export class JobProcessors {
     private readonly demo: DemoService,
   ) {}
 
+  /**
+   * PDF rendering and the sponsor register import both use a lot of memory, so they never overlap: each
+   * waits for the other to finish. (Each also has its own queue running one job at a time.)
+   */
+  private exclusive<T>(work: () => Promise<T>): Promise<T> {
+    const result = this.heavy.then(work);
+    this.heavy = result.catch(() => undefined);
+    return result;
+  }
+
   async run(queue: string, job: Pick<Job, 'name' | 'data'>): Promise<unknown> {
     const data = job.data as Record<string, unknown>;
     switch (`${queue}:${job.name}`) {
@@ -35,11 +47,11 @@ export class JobProcessors {
         return this.mail.deliver(job.data as MailJob);
       case 'work:fetch-job':
         return this.fetches.process(String(data['id']));
-      case 'work:pdf':
-        return this.pdf.process(String(data['id']));
-      case 'work:snapshot-pdf':
-        return this.pdf.processSnapshot(String(data['id']));
-      case 'work:agent':
+      case 'pdf:pdf':
+        return this.exclusive(() => this.pdf.process(String(data['id'])));
+      case 'pdf:snapshot-pdf':
+        return this.exclusive(() => this.pdf.processSnapshot(String(data['id'])));
+      case 'agent:agent':
         return this.agent.process(String(data['id']));
       case 'work:import':
         return this.data.processImport(String(data['id']));
@@ -51,8 +63,8 @@ export class JobProcessors {
         return this.data.cleanup();
       case 'schedule:reminders':
         return this.reminders.sweep();
-      case 'schedule:sponsor-register':
-        return this.register.update();
+      case 'register:import':
+        return this.exclusive(() => this.register.update());
       default:
         this.logger.warn(`No processor for ${queue}:${job.name}`);
         return undefined;

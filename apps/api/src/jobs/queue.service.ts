@@ -3,7 +3,11 @@ import { Queue } from 'bullmq';
 import { config } from '../config.js';
 import { RedisService } from '../redis.service.js';
 
-export const QUEUES = { mail: 'mail', work: 'work', schedule: 'schedule' } as const;
+/**
+ * The heavy jobs each have their own queue, run one at a time (worker.ts): agent runs, PDF rendering and the
+ * sponsor register import. PDFs and the register import also never run at the same time (processors.ts).
+ */
+export const QUEUES = { mail: 'mail', work: 'work', agent: 'agent', pdf: 'pdf', register: 'register', schedule: 'schedule' } as const;
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 
 /** Slow work goes to BullMQ (project rule 8); the worker process (worker.ts) runs it. */
