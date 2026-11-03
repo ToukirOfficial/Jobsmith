@@ -15,7 +15,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "node --env-file-if-exists=../../.env dist/seed.js --dev",
     "db:reset": "prisma migrate reset --force && pnpm build && pnpm db:seed",
-    "evals": "node --env-file-if-exists=../../.env dist/evals.js"
+    "evals": "node --env-file-if-exists=../../.env dist/evals.js",
+    "sponsors:import": "node --env-file-if-exists=../../.env dist/sponsors/import-cli.js"
   },
   "dependencies": {
     "@jobsmith/pdf": "workspace:*",

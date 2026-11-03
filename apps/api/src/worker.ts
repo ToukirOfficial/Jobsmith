@@ -8,7 +8,6 @@ import { JobsModule } from './jobs/jobs.module.js';
 import { JobProcessors } from './jobs/processors.js';
 import { QUEUES, QueueService, type QueueName } from './jobs/queue.service.js';
 import { RedisService } from './redis.service.js';
-import { PrismaService } from './prisma.service.js';
 
 /** Scheduled jobs, in London time (plan.md deploy notes). */
 const SCHEDULES: { id: string; pattern: string; demoOnly?: boolean }[] = [
@@ -53,12 +52,11 @@ for (const s of SCHEDULES) {
   await schedule.upsertJobScheduler(s.id, { pattern: s.pattern, tz: 'Europe/London' }, { name: s.id });
 }
 // The sponsor register has its own queue (run one at a time, never alongside a PDF). GOV.UK publishes on
-// working days; we only download when the file changed.
+// working days; we only download when the file changed. Never imported on start (a big import while
+// everything else boots is what ran the server out of memory): only at 04:00, or by hand with
+// `pnpm --filter @jobsmith/api sponsors:import` (sponsors/import-cli.ts).
 await schedule.removeJobScheduler('sponsor-register');
-await queues.queue('register').upsertJobScheduler('sponsor-register', { pattern: '0 3 * * *', tz: 'Europe/London' }, { name: 'import' });
-// First start: load the sponsor register straight away instead of waiting for 03:00.
-const prisma = app.get(PrismaService);
-if (!(await prisma.sponsorImport.count({ where: { status: 'DONE' } }))) await queues.queue('register').add('import', {}, { jobId: 'sponsor-register-first-run' });
+await queues.queue('register').upsertJobScheduler('sponsor-register', { pattern: '0 4 * * *', tz: 'Europe/London' }, { name: 'import' });
 logger.log(`Jobsmith worker running (${workers.length} queues, ${SCHEDULES.length + 1} schedules)`);
 
 const stop = async () => {

@@ -15,6 +15,7 @@
     "format": "prettier --write .",
     "db:migrate": "pnpm --filter @jobsmith/api db:migrate",
     "db:seed": "pnpm --filter @jobsmith/api db:seed",
+    "sponsors:import": "pnpm --filter @jobsmith/api sponsors:import",
     "db:reset": "pnpm --filter @jobsmith/api db:reset",
     "worker": "pnpm --filter @jobsmith/api worker",
     "evals": "pnpm --filter @jobsmith/api evals",
