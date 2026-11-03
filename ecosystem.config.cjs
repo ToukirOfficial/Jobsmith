@@ -31,7 +31,7 @@ module.exports = {
       cwd: path.join(__dirname, 'apps/api'),
       script: 'dist/worker.js',
       // A heap limit well under the memory cap, so V8 collects garbage before PM2 would restart the worker.
-      node_args: `--env-file=${apiEnv} --max-old-space-size=192`,
+      node_args: `--env-file=${apiEnv} --max-old-space-size=160`,
       max_memory_restart: '350M',
       env: { NODE_ENV: 'production' },
     },
