@@ -43,11 +43,14 @@ describe('reminder scheduling', () => {
     const startsAt = new Date(Date.now() + 2 * 3600_000).toISOString();
     await c.post('/interviews', { applicationId: app.id, type: 'PHONE_SCREEN', startsAt });
     const r = await ctx.prisma.reminder.findFirstOrThrow({ where: { applicationId: app.id } });
-    await ctx.prisma.reminder.update({ where: { id: r.id }, data: { dueAt: new Date(Date.now() - 60_000) } });
+    // Sweep on a fixed clock so only this reminder is due. On the real clock, reminders planned by
+    // earlier tests from fixed dates (e.g. the follow-up for 9 Nov 2026) fall due as time passes.
+    const now = new Date('2025-01-15T12:00:00.000Z');
+    await ctx.prisma.reminder.update({ where: { id: r.id }, data: { dueAt: new Date(now.getTime() - 60_000) } });
 
-    const [a, b] = await Promise.all([sweeper.sweep(), sweeper.sweep()]);
+    const [a, b] = await Promise.all([sweeper.sweep(now), sweeper.sweep(now)]);
     expect(a.emailed + b.emailed).toBe(1);
-    expect(await sweeper.sweep()).toEqual({ claimed: 0, emailed: 0 });
+    expect(await sweeper.sweep(now)).toEqual({ claimed: 0, emailed: 0 });
     const mails = MailService.outbox.filter((m) => m.subject.includes('Once Only Ltd'));
     expect(mails).toHaveLength(1);
     const row = await ctx.prisma.reminder.findUniqueOrThrow({ where: { id: r.id } });
@@ -57,15 +60,18 @@ describe('reminder scheduling', () => {
     // Editing the application again never re-arms a reminder that already fired.
     await c.patch(`/applications/${app.id}`, { notes: 'Prepared' });
     expect((await ctx.prisma.reminder.findUniqueOrThrow({ where: { id: r.id } })).sentAt).not.toBeNull();
-    expect(await sweeper.sweep()).toEqual({ claimed: 0, emailed: 0 });
+    expect(await sweeper.sweep(now)).toEqual({ claimed: 0, emailed: 0 });
   });
 
   it('never emails dismissed reminders, stale backlog, or users who turned email off', async () => {
     const app = (await c.post('/applications', { title: 'Developer', company: 'Quiet Co' })).body;
     await c.post(`/applications/${app.id}/apply`, { channel: 'EMAIL', appliedOn: '2026-01-05', attachCoverLetter: false });
     const r = await ctx.prisma.reminder.findFirstOrThrow({ where: { applicationId: app.id } });
-    expect(r.dueAt.getTime()).toBeLessThan(Date.now() - 3 * DAY);
-    await sweeper.sweep();
+    // Fixed clock: this reminder is long overdue, while reminders earlier tests planned from
+    // fixtures dated after this clock are not due yet, whatever today's date is.
+    const now = new Date('2026-03-01T12:00:00.000Z');
+    expect(r.dueAt.getTime()).toBeLessThan(now.getTime() - 3 * DAY);
+    await sweeper.sweep(now);
     expect(MailService.outbox).toHaveLength(0);
 
     const due = await c.get('/reminders?scope=due');
